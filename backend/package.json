@@ -1,0 +1,20 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "Code Arena is a focused platform to track coding sessions, manage tasks, and visualize progress through insightful stats and activity graphs—all in a clean, dark-themed developer dashboard.",
+  "keywords": [
+    "code-arena",
+    "activity",
+    "task-manager",
+    "progress-visualize"
+  ],
+  "license": "ISC",
+  "author": "Dhruv Pal",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon -r dotenv/config server.js",
+    "start": "node -r dotenv/config server.js"
+  }
+}
