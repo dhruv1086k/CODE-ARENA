@@ -32,3 +32,32 @@ export const registerUser = asyncHandlerWrapper(async (req, res) => {
         new ApiResponse(201, createdUser, "User Created Successfully")
     )
 })
+
+export const loginUser = asyncHandlerWrapper(async (req, res) => {
+    const { email, password } = req.body
+
+    if (!email || !password) {
+        throw new ApiError(400, "User details required")
+    }
+
+    const isUser = await User.findOne({ email })
+
+    if (!isUser) {
+        throw new ApiError(401, "User not found")
+    }
+
+    const userPassword = await isUser.isPasswordCorrect(password)
+    if (!userPassword) {
+        throw new ApiError(401, "Incorrect password")
+    }
+
+    const loggedUser = await User.findById(isUser._id).select("-password")
+
+    if (!loggedUser) {
+        throw new ApiError(500, "Something went wrong while logging user")
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, loggedUser, "User Loggedin Successfully")
+    )
+})
