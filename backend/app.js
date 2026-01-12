@@ -1,4 +1,5 @@
 import express from 'express'
+import Router from './routes/auth.route.js'
 
 const app = express()
 
@@ -10,6 +11,8 @@ app.use(express.urlencoded({ extended: true }))
 app.get("/health", (req, res) => {
     res.send("Health OK")
 })
+
+app.use("/api/v1/auth", Router)
 
 
 export default app
