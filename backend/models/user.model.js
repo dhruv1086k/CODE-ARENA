@@ -27,6 +27,8 @@ const UserSchema = new mongoose.Schema({
         required: true,
         trim: true
     }
+}, {
+    timestamps: true
 })
 
 UserSchema.pre("save", async function () {
@@ -35,5 +37,7 @@ UserSchema.pre("save", async function () {
 })
 
 UserSchema.methods.isPasswordCorrect = async function (password) {
-    return await bcrypt.compare(this.password, password)
+    return await bcrypt.compare(password, this.password)
 }
+
+export const User = mongoose.model("User", UserSchema)
