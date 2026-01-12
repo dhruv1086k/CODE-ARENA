@@ -19,17 +19,28 @@ export const registerUser = asyncHandlerWrapper(async (req, res) => {
         name,
         email,
         username,
-        password
+        password,
     })
 
-    const createdUser = await User.findById(user._id).select("-password")
+    const accessToken = await user.generateAccessToken()
+    const refreshToken = await user.generateRefreshToken()
+
+    user.refreshToken = refreshToken
+    await user.save()
+
+    const createdUser = await User.findById(user._id).select("-password -refreshToken")
+
 
     if (!createdUser) {
         throw new ApiError(500, "Something went wrong while registering user")
     }
 
     return res.status(201).json(
-        new ApiResponse(201, createdUser, "User Created Successfully")
+        new ApiResponse(201, {
+            user: createdUser,
+            accessToken,
+            refreshToken
+        }, "User Created Successfully"),
     )
 })
 
@@ -51,13 +62,23 @@ export const loginUser = asyncHandlerWrapper(async (req, res) => {
         throw new ApiError(401, "Incorrect password")
     }
 
-    const loggedUser = await User.findById(isUser._id).select("-password")
+    const accessToken = await isUser.generateAccessToken()
+    const refreshToken = await isUser.generateRefreshToken()
+
+    isUser.refreshToken = refreshToken
+    await isUser.save()
+
+    const loggedUser = await User.findById(isUser._id).select("-password -refreshToken")
 
     if (!loggedUser) {
         throw new ApiError(500, "Something went wrong while logging user")
     }
 
     return res.status(200).json(
-        new ApiResponse(200, loggedUser, "User Loggedin Successfully")
+        new ApiResponse(200, {
+            user: loggedUser,
+            accessToken,
+            refreshToken
+        }, "User Loggedin Successfully")
     )
 })
