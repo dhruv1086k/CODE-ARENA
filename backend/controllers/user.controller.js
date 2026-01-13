@@ -3,6 +3,23 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandlerWrapper } from "../utils/Async-handler.js";
 
+const generateAccessAndRefreshToken = async (userId) => {
+    try {
+        const user = await User.findOne(userId)
+        const accessToken = await user.generateAccessToken()
+        const refreshToken = await user.generateRefreshToken()
+
+        user.refreshToken = refreshToken
+        await user.save({ validateBeforeSave: false })
+
+        return { accessToken, refreshToken }
+    } catch (error) {
+        res.status(500).json({
+            message: "Something went wrong"
+        })
+    }
+}
+
 export const registerUser = asyncHandlerWrapper(async (req, res) => {
     const { name, username, email, password } = req.body
 
@@ -22,11 +39,7 @@ export const registerUser = asyncHandlerWrapper(async (req, res) => {
         password,
     })
 
-    const accessToken = await user.generateAccessToken()
-    const refreshToken = await user.generateRefreshToken()
-
-    user.refreshToken = refreshToken
-    await user.save()
+    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id)
 
     const createdUser = await User.findById(user._id).select("-password -refreshToken")
 
@@ -35,13 +48,21 @@ export const registerUser = asyncHandlerWrapper(async (req, res) => {
         throw new ApiError(500, "Something went wrong while registering user")
     }
 
-    return res.status(201).json(
-        new ApiResponse(201, {
-            user: createdUser,
-            accessToken,
-            refreshToken
-        }, "User Created Successfully"),
-    )
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+
+    return res
+        .cookie("refreshToken", refreshToken, options)
+        .status(201)
+        .json(
+            new ApiResponse(201, {
+                user: createdUser,
+                accessToken,
+                refreshToken
+            }, "User Created Successfully"),
+        )
 })
 
 export const loginUser = asyncHandlerWrapper(async (req, res) => {
@@ -62,11 +83,7 @@ export const loginUser = asyncHandlerWrapper(async (req, res) => {
         throw new ApiError(401, "Incorrect password")
     }
 
-    const accessToken = await isUser.generateAccessToken()
-    const refreshToken = await isUser.generateRefreshToken()
-
-    isUser.refreshToken = refreshToken
-    await isUser.save()
+    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(isUser._id)
 
     const loggedUser = await User.findById(isUser._id).select("-password -refreshToken")
 
@@ -74,11 +91,35 @@ export const loginUser = asyncHandlerWrapper(async (req, res) => {
         throw new ApiError(500, "Something went wrong while logging user")
     }
 
-    return res.status(200).json(
-        new ApiResponse(200, {
-            user: loggedUser,
-            accessToken,
-            refreshToken
-        }, "User Loggedin Successfully")
-    )
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+
+    return res
+        .status(200)
+        .cookie("refreshToken", refreshToken, options)
+        .json(
+            new ApiResponse(200, {
+                user: loggedUser,
+                accessToken,
+                refreshToken
+            }, "User Loggedin Successfully")
+        )
+})
+
+export const logoutUser = asyncHandlerWrapper(async (req, res) => {
+    const { userId } = req.user._id
+
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+
+    return res
+        .status(200)
+        .clearCookie("refreshToken", options)
+        .json(
+            new ApiResponse(200, "", "User LoggedOut Successfully")
+        )
 })

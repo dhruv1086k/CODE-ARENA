@@ -65,10 +65,5 @@ UserSchema.methods.generateRefreshToken = function () {
     })
 }
 
-// JWT -> Verify Access Token
-UserSchema.methods.decodeAccessToken = function (token) {
-    return jwt.verify(token, process.env.ACCESS_TOKEN_SECRET_KEY)
-}
-
 
 export const User = mongoose.model("User", UserSchema)

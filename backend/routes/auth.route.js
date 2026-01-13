@@ -1,9 +1,11 @@
 import express from 'express'
-import { loginUser, registerUser } from '../controllers/user.controller.js'
+import { loginUser, logoutUser, registerUser } from '../controllers/user.controller.js'
+import { verifyJWT } from '../middleware/auth.middleware.js'
 
 const UserRouter = express.Router()
 
 UserRouter.route("/register").post(registerUser)
 UserRouter.route("/login").post(loginUser)
+UserRouter.route("/logout").get(verifyJWT, logoutUser)
 
 export default UserRouter
