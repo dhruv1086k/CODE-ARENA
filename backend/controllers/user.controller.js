@@ -2,6 +2,7 @@ import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandlerWrapper } from "../utils/Async-handler.js";
+import jwt from 'jsonwebtoken'
 
 const generateAccessAndRefreshToken = async (userId) => {
     try {
@@ -132,3 +133,39 @@ export const logoutUser = asyncHandlerWrapper(async (req, res) => {
             new ApiResponse(200, "", "User LoggedOut Successfully")
         )
 })
+
+export const refreshToken = asyncHandlerWrapper(async (req, res) => {
+    const token = req.cookies?.refreshToken
+
+    if (!token) {
+        throw new ApiError(401, "Token not found")
+    }
+
+    const decodedToken = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET_KEY)
+    const user = await User.findById(decodedToken._id).select("-password")
+
+    if (!user) {
+        throw new ApiError(401, "User not found")
+    }
+
+    if (token !== user.refreshToken) {
+        throw new ApiError(401, "Refresh Token is wrong")
+    }
+
+    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id)
+
+    user.refreshToken = refreshToken
+    await user.save({ validateBeforeSave: false })
+
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+
+    return res
+        .status(200)
+        .cookie("refreshToken", refreshToken, options)
+        .json(
+            new ApiResponse(200, accessToken, "Successfully refreshed access token")
+        )
+}) 
