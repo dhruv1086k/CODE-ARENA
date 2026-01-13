@@ -109,7 +109,16 @@ export const loginUser = asyncHandlerWrapper(async (req, res) => {
 })
 
 export const logoutUser = asyncHandlerWrapper(async (req, res) => {
-    const { userId } = req.user._id
+    const userId = req.user._id?.toString()
+
+    const user = await User.findById(userId)
+
+    if (!user) {
+        throw new ApiError(401, "User not found")
+    }
+
+    user.refreshToken = ""
+    await user.save({ validateBeforeSave: false })
 
     const options = {
         httpOnly: true,
