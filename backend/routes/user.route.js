@@ -1,6 +1,6 @@
 import express from "express"
-import { getUserData } from "../middleware/user.middleware.js"
 import { verifyJWT } from "../middleware/auth.middleware.js"
+import { getUserData } from "../controllers/user.controller.js"
 
 const UserRouter = express.Router()
 

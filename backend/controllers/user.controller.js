@@ -4,7 +4,7 @@ import { asyncHandlerWrapper } from "../utils/Async-handler.js";
 
 export const getUserData = asyncHandlerWrapper(async (req, res) => {
     const userData = req.user
-    
+
     if (!userData) {
         throw new ApiError(401, "User data not found")
     }

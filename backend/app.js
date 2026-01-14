@@ -2,6 +2,7 @@ import express from 'express'
 import cookieParser from 'cookie-parser'
 import authRouter from './routes/auth.route.js'
 import UserRouter from './routes/user.route.js'
+import TodoRouter from './routes/todo.route.js'
 
 const app = express()
 
@@ -17,6 +18,6 @@ app.get("/health", (req, res) => {
 
 app.use("/api/v1/auth", authRouter)
 app.use("/api/v1/users", UserRouter)
-
+app.use("/api/v1/todos", TodoRouter)
 
 export default app
