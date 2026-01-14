@@ -4,7 +4,17 @@ import { asyncHandlerWrapper } from "../utils/Async-handler.js";
 import jwt from "jsonwebtoken"
 
 export const verifyJWT = asyncHandlerWrapper(async (req, res, next) => {
-    const token = req.header("Authorization")?.split(" ")[1]
+    const authHeader = req.header("Authorization")
+
+    if (!authHeader) {
+        throw new ApiError(401, "Auth Header missing")
+    }
+
+    if (!authHeader.startsWith("Bearer ")) {
+        throw new ApiError(401, "Invalid authorization format")
+    }
+
+    const token = authHeader.split(" ")[1]
 
     if (!token) {
         throw new ApiError(401, "Token not found")
