@@ -3,21 +3,23 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandlerWrapper } from "../utils/Async-handler.js";
 
-export const createTodos = asyncHandlerWrapper(async (req, res) => {
+export const createTodo = asyncHandlerWrapper(async (req, res) => {
     const { topicTag, description } = req.body
-    const userID = req.user._id
+    const user = req.user._id
 
     if (!topicTag) {
-        throw new ApiError(400, "Todo Topic is required")
+        throw new ApiError(401, "Todo name is required")
     }
 
     const todo = await Todo.create({
         topicTag,
         description,
-        owner: userID
+        owner: user
     })
 
-    return res.status(201).json(
-        new ApiResponse(201, todo, "Todo created successfully")
-    )
-}) 
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, todo, "Todo Created")
+        )
+})
