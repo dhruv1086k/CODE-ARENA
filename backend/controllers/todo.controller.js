@@ -91,3 +91,21 @@ export const updateTodo = asyncHandlerWrapper(async (req, res) => {
             new ApiResponse(200, updatedTodo, "Task Completed Successfully")
         )
 })
+
+export const deleteTodo = asyncHandlerWrapper(async (req, res) => {
+    const todoId = req.params.id
+    const userId = req.user.id
+
+    const deletedTodo = await Todo.findOneAndDelete(
+        { _id: todoId, owner: userId },
+    )
+
+    if (!deletedTodo) {
+        throw new ApiError(401, "Todo not found or you are not authorized to deleted this todo")
+    }
+
+    return res.status(200)
+        .json(
+            new ApiResponse(200, deletedTodo, "Todo deleted successfully")
+        )
+})
