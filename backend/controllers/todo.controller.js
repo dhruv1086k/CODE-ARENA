@@ -18,24 +18,38 @@ export const createTodo = asyncHandlerWrapper(async (req, res) => {
     })
 
     return res
-        .status(200)
+        .status(201)
         .json(
-            new ApiResponse(200, todo, "Todo Created")
+            new ApiResponse(201, todo, "Todo Created")
         )
 })
 
 export const getTodos = asyncHandlerWrapper(async (req, res) => {
+    const page = req.query.page || 1
+    const limit = req.query.limit || 10
+    const offset = (page - 1) * limit
+
     const userId = req.user._id.toString()
     const todos = await Todo.find({ owner: userId })
+        .sort({ createdAt: -1 }) // give me newest record
+        .skip(offset) // how many docs to skip
+        .limit(limit) // how many items to serve
 
-    if (!todos) {
-        throw new ApiError(401, "Todos not found")
-    }
+    const totalTodos = await Todo.countDocuments({ owner: userId })
+    const totalPages = Math.ceil(totalTodos / limit)
 
     return res
         .status(200)
         .json(
-            new ApiResponse(200, todos, "Todos Received")
+            new ApiResponse(200, {
+                todos,
+                "pagination": {
+                    "page": page,
+                    "limit": limit,
+                    "totalTodos": totalTodos,
+                    "totalPages": totalPages
+                }
+            }, "Todos fetched successfully")
         )
 })
 
