@@ -71,24 +71,25 @@ export const getUserTodo = asyncHandlerWrapper(async (req, res) => {
         )
 })
 
-export const updateTodo = asyncHandlerWrapper(async (req, res) => {
-    const todoId = req.params.id.toString()
+export const toggleTodo = asyncHandlerWrapper(async (req, res) => {
+    const todoId = req.params.id
     const userId = req.user._id
 
-    const updatedTodo = await Todo.findOneAndUpdate(
-        { _id: todoId, owner: userId },
-        { $set: { isCompleted: true } },
-        { new: true }
+    const todo = await Todo.findOne(
+        { _id: todoId, owner: userId }
     )
 
-    if (!updatedTodo) {
-        throw new ApiError(401, "Todo not found or user not authorized")
+    if (!todo) {
+        throw new ApiError(401, "Todo not found or you are not authorized")
     }
+
+    todo.isCompleted = !todo.isCompleted
+    await todo.save({ validateBeforeSave: false })
 
     return res
         .status(200)
         .json(
-            new ApiResponse(200, updatedTodo, "Task Completed Successfully")
+            new ApiResponse(200, todo, "Task status changed Successfully")
         )
 })
 
