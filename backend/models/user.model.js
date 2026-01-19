@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { startSession } from "mongoose";
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 
@@ -30,6 +30,15 @@ const UserSchema = new mongoose.Schema({
     },
     refreshToken: {
         type: String
+    },
+    activeSession: {
+        startTime: {
+            type: Date,
+            default: null
+        },
+        topicTag: {
+            type: String
+        }
     }
 }, {
     timestamps: true

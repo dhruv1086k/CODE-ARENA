@@ -31,6 +31,7 @@ export const getTodos = asyncHandlerWrapper(async (req, res) => {
     const userId = req.user._id
     const completed = req.query.completed
     const filter = { owner: userId }
+    const searchKey = req.query.s.trim()
 
     if (completed === 'true') {
         filter.isCompleted = true
@@ -38,8 +39,14 @@ export const getTodos = asyncHandlerWrapper(async (req, res) => {
     if (completed === 'false') {
         filter.isCompleted = false
     }
+    if (searchKey) {
+        filter.$or = [
+            { topicTag: { $regex: searchKey, $options: "i" } },
+            { description: { $regex: searchKey, $options: "i" } }
+        ]
+    }
 
-    const todo = await Todo.find(filter)
+    const todos = await Todo.find(filter)
         .sort({ createdAt: -1 })
         .skip(offset)
         .limit(limit)
@@ -51,7 +58,7 @@ export const getTodos = asyncHandlerWrapper(async (req, res) => {
         .status(200)
         .json(
             new ApiResponse(200, {
-                todo,
+                todos,
                 "pagination": {
                     "page": page,
                     "limit": limit,

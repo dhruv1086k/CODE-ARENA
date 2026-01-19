@@ -17,7 +17,7 @@ const studySessionSchema = new mongoose.Schema({
     topicTag: {
         type: String,
     },
-    date: {
+    sessionDate: {
         type: Date,
         required: true
     },
