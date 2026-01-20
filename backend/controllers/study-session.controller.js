@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { Session } from "../models/study-session.model.js";
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
@@ -110,5 +111,50 @@ export const getStudySession = asyncHandlerWrapper(async (req, res) => {
                     "totalPages": totalPages
                 }
             })
+        )
+})
+
+export const getStats = asyncHandlerWrapper(async (req, res) => {
+    const userId = new mongoose.Types.ObjectId(req.user.id)
+    let statsdate = req.query.date
+    if (!statsdate) {
+        statsdate = new Date()
+    }
+    const date = new Date(statsdate)
+    date.setHours(0, 0, 0, 0)
+    const nextDate = new Date(date)
+    nextDate.setDate(date.getDate() + 1)
+
+    const filter = { owner: userId }
+    if (statsdate) {
+        filter.startTime = {
+            $gte: date,
+            $lt: nextDate
+        }
+    }
+
+    const statsData = await Session.aggregate([
+        { $match: filter },
+        {
+            $group: {
+                _id: null,
+                totalStudyTime: { $sum: "$duration" },
+                totalSessions: { $sum: 1 }
+            }
+        },
+        {
+            $project: {
+                _id: 0,
+                totalStudyTime: 1,
+                totalSessions: 1
+            }
+        }
+    ])
+
+    const stats = statsData[0] || { totalStudyTime: 0, totalSessions: 0 }
+
+    return res.status(200)
+        .json(
+            new ApiResponse(200, stats, "stats fetched successfully")
         )
 })
