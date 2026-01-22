@@ -158,3 +158,72 @@ export const getStats = asyncHandlerWrapper(async (req, res) => {
             new ApiResponse(200, stats, "stats fetched successfully")
         )
 })
+
+export const getStreak = asyncHandlerWrapper(async (req, res) => {
+    const userId = new mongoose.Types.ObjectId(req.user.id)
+
+    const streakDates = await Session.aggregate([
+        {
+            $match: {
+                owner: userId
+            }
+        },
+        {
+            $project: {
+                day: {
+                    $dateTrunc: { // takes full date remove time and return the data in unit form
+                        date: "$startTime",
+                        unit: "day"
+                    }
+                }
+            }
+        },
+        {
+            $group: {
+                _id: "$day"
+            }
+        },
+        {
+            $sort: {
+                _id: -1
+            }
+        }
+    ])
+
+    const dates = []
+    let streak = 0
+
+    for (let i = 0; i < streakDates.length; i++) {
+        dates.push(new Date(streakDates[i]._id))
+    }
+
+    const today = new Date()
+    const todayUTC = new Date(Date.UTC(
+        today.getUTCFullYear(),
+        today.getUTCMonth(),
+        today.getUTCDate()
+    ))
+
+    if (dates.length === 0) {
+        streak = 0
+    }
+
+    if (todayUTC.getTime() === dates[0].getTime()) {
+        const ONE_DAY = 24 * 60 * 60 * 1000
+        streak = 1
+        for (let i = 1; i < dates.length; i++) {
+            const prev = dates[i - 1]
+            const curr = dates[i]
+
+            if (prev.getTime() - curr.getTime() === ONE_DAY) {
+                streak++
+            } else {
+                break
+            }
+        }
+        console.log("streak:" + streak);
+
+    } else {
+        streak = 0
+    }
+})
