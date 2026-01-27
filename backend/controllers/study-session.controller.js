@@ -192,11 +192,7 @@ export const getStreak = asyncHandlerWrapper(async (req, res) => {
 
     const dates = []
     let streak = 0
-
-    for (let i = 0; i < streakDates.length; i++) {
-        dates.push(new Date(streakDates[i]._id))
-    }
-
+    const ONE_DAY = 24 * 60 * 60 * 1000
     const today = new Date()
     const todayUTC = new Date(Date.UTC(
         today.getUTCFullYear(),
@@ -204,12 +200,15 @@ export const getStreak = asyncHandlerWrapper(async (req, res) => {
         today.getUTCDate()
     ))
 
+    for (let i = 0; i < streakDates.length; i++) {
+        dates.push(new Date(streakDates[i]._id))
+    }
+
     if (dates.length === 0) {
         streak = 0
     }
 
     if (todayUTC.getTime() === dates[0].getTime()) {
-        const ONE_DAY = 24 * 60 * 60 * 1000
         streak = 1
         for (let i = 1; i < dates.length; i++) {
             const prev = dates[i - 1]
@@ -221,9 +220,34 @@ export const getStreak = asyncHandlerWrapper(async (req, res) => {
                 break
             }
         }
-        console.log("streak:" + streak);
 
     } else {
         streak = 0
     }
+
+    let lastActiveDate = dates.length > 0 ? dates[0] : null
+
+
+    let currentStreak = 1;
+    let longStreak = 0;
+    if (dates.length === 0) {
+        return 0;
+    }
+    for (let i = 1; i < dates.length; i++) {
+        if (dates[i - 1].getTime() - dates[i].getTime() === ONE_DAY) {
+            currentStreak++
+        } else {
+            currentStreak = 1
+        }
+    }
+    const longestStreak = Math.max(longStreak, currentStreak)
+
+    return res.status(200)
+        .json(
+            new ApiResponse(200, {
+                "currentStreak": streak,
+                "lastActiveDate": lastActiveDate,
+                "longestStreak": longestStreak,
+            }, "Streak fetched successfully")
+        )
 })
