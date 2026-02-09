@@ -251,3 +251,47 @@ export const getStreak = asyncHandlerWrapper(async (req, res) => {
             }, "Streak fetched successfully")
         )
 })
+
+export const getHeatMap = asyncHandlerWrapper(async (req, res) => {
+    const userId = new mongoose.Types.ObjectId(req.user.id)
+
+    const heatMap = await Session.aggregate([
+        {
+            $match: {
+                owner: userId
+            }
+        },
+        {
+            $project: {
+                day: {
+                    $dateTrunc: {
+                        date: "$startTime",
+                        unit: "day"
+                    }
+                }
+            }
+        },
+        {
+            $group: {
+                _id: "$day",
+                count: {
+                    $sum: 1
+                }
+            }
+        }, {
+            $project: {
+                day: "$_id",
+                _id: 0,
+                count: 1
+            }
+        }, {
+            $sort: {
+                day: 1
+            }
+        }, {
+            $limit: 90
+        }
+    ])
+
+    res.json(heatMap)
+})
