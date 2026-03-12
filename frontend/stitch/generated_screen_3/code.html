@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CodeTrack - Todo Management</title>
+<!-- Tailwind CSS v3 CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              dark: '#0f1117',
+              card: '#1f2937',
+              accent: '#3b82f6',
+              border: '#374151'
+            }
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-scrollbar">
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f1117;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #374151;
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #4b5563;
+    }
+  </style>
+</head>
+<body class="bg-brand-dark text-gray-100 font-sans min-h-screen">
+<!-- BEGIN: Navigation -->
+<header class="border-b border-brand-border py-4 px-8 flex justify-between items-center bg-brand-dark/50 backdrop-blur-md sticky top-0 z-50">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 bg-brand-accent rounded-lg flex items-center justify-center">
+<span class="font-bold text-white italic">C</span>
+</div>
+<h1 class="text-xl font-semibold tracking-tight">CodeTrack</h1>
+</div>
+<div class="flex items-center gap-6">
+<nav class="hidden md:flex gap-4 text-sm font-medium text-gray-400">
+<a class="hover:text-white transition-colors" href="#">Dashboard</a>
+<a class="text-white border-b-2 border-brand-accent" href="#">Tasks</a>
+<a class="hover:text-white transition-colors" href="#">Projects</a>
+</nav>
+<div class="w-10 h-10 rounded-full bg-brand-card border border-brand-border flex items-center justify-center">
+<span class="text-xs">JD</span>
+</div>
+</div>
+</header>
+<!-- END: Navigation -->
+<!-- BEGIN: MainContent -->
+<main class="max-w-4xl mx-auto py-12 px-6">
+<!-- BEGIN: HeaderSection -->
+<section class="mb-10" data-purpose="page-header">
+<h2 class="text-3xl font-bold mb-2">Todo Management</h2>
+<p class="text-gray-400">Organize your coding tasks and project milestones.</p>
+</section>
+<!-- END: HeaderSection -->
+<!-- BEGIN: InputArea -->
+<section class="mb-8" data-purpose="add-task-form">
+<div class="flex gap-3">
+<div class="relative flex-grow">
+<input class="w-full bg-brand-card border border-brand-border rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-all text-gray-200" placeholder="Add a new task (e.g., Refactor Auth API)..." type="text"/>
+</div>
+<button class="bg-brand-accent hover:bg-blue-600 text-white font-medium px-6 py-3 rounded-xl transition-colors shadow-lg shadow-brand-accent/20 flex items-center gap-2">
+<svg class="h-5 w-5" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+          Add Task
+        </button>
+</div>
+</section>
+<!-- END: InputArea -->
+<!-- BEGIN: Filters -->
+<section class="flex flex-wrap items-center justify-between gap-4 mb-6" data-purpose="task-filters">
+<div class="flex bg-brand-card p-1 rounded-lg border border-brand-border">
+<button class="px-4 py-1.5 rounded-md text-sm font-medium bg-brand-accent text-white">All</button>
+<button class="px-4 py-1.5 rounded-md text-sm font-medium text-gray-400 hover:text-white transition-colors">Pending</button>
+<button class="px-4 py-1.5 rounded-md text-sm font-medium text-gray-400 hover:text-white transition-colors">Completed</button>
+</div>
+<div class="text-sm text-gray-500">
+        Showing <span class="text-gray-300 font-medium">5</span> of <span class="text-gray-300 font-medium">12</span> tasks
+      </div>
+</section>
+<!-- END: Filters -->
+<!-- BEGIN: TaskList -->
+<section class="space-y-4" data-purpose="todo-list-container">
+<!-- Task Item 1 -->
+<article class="group bg-brand-card border border-brand-border hover:border-brand-accent/50 p-4 rounded-xl flex items-center gap-4 transition-all">
+<div class="flex-shrink-0">
+<input class="w-5 h-5 rounded border-brand-border bg-brand-dark text-brand-accent focus:ring-brand-accent focus:ring-offset-brand-dark cursor-pointer" type="checkbox"/>
+</div>
+<div class="flex-grow">
+<div class="flex items-center gap-2 mb-1">
+<span class="text-[10px] uppercase tracking-wider font-bold bg-blue-500/10 text-brand-accent px-2 py-0.5 rounded border border-brand-accent/20">Backend</span>
+</div>
+<p class="text-gray-200 font-medium">Implement JWT authentication middleware</p>
+</div>
+<div class="flex-shrink-0 flex items-center gap-3">
+<button class="text-gray-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 p-2" title="Delete Task">
+<svg class="h-5 w-5" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+</article>
+<!-- Task Item 2 -->
+<article class="group bg-brand-card border border-brand-border hover:border-brand-accent/50 p-4 rounded-xl flex items-center gap-4 transition-all">
+<div class="flex-shrink-0">
+<input class="w-5 h-5 rounded border-brand-border bg-brand-dark text-brand-accent focus:ring-brand-accent focus:ring-offset-brand-dark cursor-pointer" type="checkbox"/>
+</div>
+<div class="flex-grow">
+<div class="flex items-center gap-2 mb-1">
+<span class="text-[10px] uppercase tracking-wider font-bold bg-purple-500/10 text-purple-400 px-2 py-0.5 rounded border border-purple-500/20">Frontend</span>
+</div>
+<p class="text-gray-200 font-medium">Design Dark Mode system tokens</p>
+</div>
+<div class="flex-shrink-0 flex items-center gap-3">
+<button class="text-gray-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 p-2" title="Delete Task">
+<svg class="h-5 w-5" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+</article>
+<!-- Task Item 3 (Completed) -->
+<article class="group bg-brand-card border border-brand-border/50 p-4 rounded-xl flex items-center gap-4 transition-all opacity-60">
+<div class="flex-shrink-0">
+<input checked="" class="w-5 h-5 rounded border-brand-border bg-brand-dark text-brand-accent focus:ring-brand-accent focus:ring-offset-brand-dark cursor-pointer" type="checkbox"/>
+</div>
+<div class="flex-grow">
+<div class="flex items-center gap-2 mb-1">
+<span class="text-[10px] uppercase tracking-wider font-bold bg-green-500/10 text-green-400 px-2 py-0.5 rounded border border-green-500/20">Database</span>
+</div>
+<p class="text-gray-400 font-medium line-through">Schema migration for User Profiles</p>
+</div>
+<div class="flex-shrink-0 flex items-center gap-3">
+<button class="text-gray-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 p-2" title="Delete Task">
+<svg class="h-5 w-5" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+</article>
+<!-- Task Item 4 -->
+<article class="group bg-brand-card border border-brand-border hover:border-brand-accent/50 p-4 rounded-xl flex items-center gap-4 transition-all">
+<div class="flex-shrink-0">
+<input class="w-5 h-5 rounded border-brand-border bg-brand-dark text-brand-accent focus:ring-brand-accent focus:ring-offset-brand-dark cursor-pointer" type="checkbox"/>
+</div>
+<div class="flex-grow">
+<div class="flex items-center gap-2 mb-1">
+<span class="text-[10px] uppercase tracking-wider font-bold bg-orange-500/10 text-orange-400 px-2 py-0.5 rounded border border-orange-500/20">DevOps</span>
+</div>
+<p class="text-gray-200 font-medium">Set up GitHub Actions for CI/CD pipeline</p>
+</div>
+<div class="flex-shrink-0 flex items-center gap-3">
+<button class="text-gray-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 p-2" title="Delete Task">
+<svg class="h-5 w-5" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+</article>
+<!-- Task Item 5 -->
+<article class="group bg-brand-card border border-brand-border hover:border-brand-accent/50 p-4 rounded-xl flex items-center gap-4 transition-all">
+<div class="flex-shrink-0">
+<input class="w-5 h-5 rounded border-brand-border bg-brand-dark text-brand-accent focus:ring-brand-accent focus:ring-offset-brand-dark cursor-pointer" type="checkbox"/>
+</div>
+<div class="flex-grow">
+<div class="flex items-center gap-2 mb-1">
+<span class="text-[10px] uppercase tracking-wider font-bold bg-blue-500/10 text-brand-accent px-2 py-0.5 rounded border border-brand-accent/20">Backend</span>
+</div>
+<p class="text-gray-200 font-medium">Optimize slow SQL queries on Dashboard feed</p>
+</div>
+<div class="flex-shrink-0 flex items-center gap-3">
+<button class="text-gray-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 p-2" title="Delete Task">
+<svg class="h-5 w-5" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+</article>
+</section>
+<!-- END: TaskList -->
+<!-- BEGIN: Pagination -->
+<nav class="mt-10 flex items-center justify-center gap-2" data-purpose="pagination-controls">
+<button class="p-2 rounded-lg border border-brand-border text-gray-400 hover:bg-brand-card hover:text-white transition-colors">
+<svg class="h-5 w-5" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" fill-rule="evenodd"></path>
+</svg>
+</button>
+<button class="w-10 h-10 rounded-lg bg-brand-accent text-white font-medium">1</button>
+<button class="w-10 h-10 rounded-lg border border-brand-border text-gray-400 hover:bg-brand-card hover:text-white transition-colors font-medium">2</button>
+<button class="w-10 h-10 rounded-lg border border-brand-border text-gray-400 hover:bg-brand-card hover:text-white transition-colors font-medium">3</button>
+<button class="p-2 rounded-lg border border-brand-border text-gray-400 hover:bg-brand-card hover:text-white transition-colors">
+<svg class="h-5 w-5" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" fill-rule="evenodd"></path>
+</svg>
+</button>
+</nav>
+<!-- END: Pagination -->
+</main>
+<!-- END: MainContent -->
+<!-- BEGIN: Footer -->
+<footer class="mt-auto py-8 border-t border-brand-border text-center text-gray-500 text-sm">
+<p>© 2023 CodeTrack System. All rights reserved.</p>
+</footer>
+<!-- END: Footer -->
+<script data-purpose="interaction-logic">
+    // Minimal interaction placeholders for visual demonstration
+    document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+      checkbox.addEventListener('change', function() {
+        const textElement = this.closest('article').querySelector('p');
+        const container = this.closest('article');
+        if (this.checked) {
+          textElement.classList.add('line-through', 'text-gray-400');
+          textElement.classList.remove('text-gray-200');
+          container.classList.add('opacity-60');
+        } else {
+          textElement.classList.remove('line-through', 'text-gray-400');
+          textElement.classList.add('text-gray-200');
+          container.classList.remove('opacity-60');
+        }
+      });
+    });
+
+    // Delete button logic
+    document.querySelectorAll('button[title="Delete Task"]').forEach(btn => {
+      btn.addEventListener('click', function() {
+        if(confirm('Are you sure you want to delete this task?')) {
+          this.closest('article').remove();
+        }
+      });
+    });
+  </script>
+</body></html>

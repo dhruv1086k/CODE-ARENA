@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+
+<html class="h-full bg-[#0f1117]" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CodeTrack | Dashboard</title>
+<!-- Tailwind CSS v3 with Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Inter Font -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              dark: '#0f1117',
+              card: '#161b22',
+              border: '#1f2937',
+              accent: '#238636', // GitHub green style
+            }
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-scrollbars">
+    /* Custom scrollbar for a cleaner dark UI */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f1117;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #30363d;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #484f58;
+    }
+  </style>
+</head>
+<body class="h-full text-gray-200 antialiased">
+<!-- BEGIN: MainHeader -->
+<header class="sticky top-0 z-50 border-b border-brand-border bg-brand-dark/80 backdrop-blur-md" data-purpose="navigation-bar">
+<nav class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+<!-- Logo -->
+<div class="flex items-center gap-2">
+<div class="flex h-8 w-8 items-center justify-center rounded-md bg-brand-accent">
+<svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+</div>
+<span class="text-xl font-bold tracking-tight text-white">CodeTrack</span>
+</div>
+<!-- Right Nav Items -->
+<div class="flex items-center gap-4">
+<button class="text-sm font-medium text-gray-400 hover:text-white transition-colors" data-purpose="logout-btn">
+          Logout
+        </button>
+<div class="h-9 w-9 overflow-hidden rounded-full border border-brand-border bg-brand-card" data-purpose="user-avatar">
+<img alt="User Avatar" class="h-full w-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAcOg5TTh0ZpxBz42gwPg8dScLPByAy2t9EXmRarB3gajIi9RO4FNVeeT2zvmgJg8_soguol2c7nS1Hy48fVcAuS7DYe4vI8p9mw_B9sA3UJrrOJiXkvO8MNIRDwsZQSoUfSd_cgF_Mf5u3O2ekwj6AkRDt8QELN5_vaEegQrqGyjSYnzxw_LRKPNedvvQba28QhABcr-SuFygVIG01OHW2VTxsjhGxvWjIocIa0yOpLat-6qwEJev5LqPT9yxewNH-8k8FdjzSzeA"/>
+</div>
+</div>
+</nav>
+</header>
+<!-- END: MainHeader -->
+<main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+<!-- BEGIN: StatsGrid -->
+<section class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-purpose="summary-stats">
+<!-- Today Study Time -->
+<div class="rounded-xl border border-brand-border bg-brand-card p-5">
+<div class="flex items-center justify-between mb-2">
+<span class="text-sm font-medium text-gray-400 uppercase tracking-wider">Today Study Time</span>
+<svg class="h-5 w-5 text-brand-accent" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+<div class="flex items-baseline gap-1">
+<span class="text-3xl font-bold text-white">4.5</span>
+<span class="text-sm text-gray-400">hours</span>
+</div>
+</div>
+<!-- Today Sessions -->
+<div class="rounded-xl border border-brand-border bg-brand-card p-5">
+<div class="flex items-center justify-between mb-2">
+<span class="text-sm font-medium text-gray-400 uppercase tracking-wider">Today Sessions</span>
+<svg class="h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+<div class="flex items-baseline gap-1">
+<span class="text-3xl font-bold text-white">3</span>
+<span class="text-sm text-gray-400">completed</span>
+</div>
+</div>
+<!-- Current Streak -->
+<div class="rounded-xl border border-brand-border bg-brand-card p-5">
+<div class="flex items-center justify-between mb-2">
+<span class="text-sm font-medium text-gray-400 uppercase tracking-wider">Current Streak</span>
+<svg class="h-5 w-5 text-orange-500" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.5-7 3 10 1 15 1 15z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path><path d="M15.05 15.05A5 5 0 0111 8c.5 1 1.5 2 3 2 0-2 1-3.5 1-3.5s2.5 2 2.5 5c0 1.105-.448 2.105-1.172 2.828z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+<div class="flex items-baseline gap-1">
+<span class="text-3xl font-bold text-white">12</span>
+<span class="text-sm text-gray-400">days</span>
+</div>
+</div>
+<!-- Longest Streak -->
+<div class="rounded-xl border border-brand-border bg-brand-card p-5">
+<div class="flex items-center justify-between mb-2">
+<span class="text-sm font-medium text-gray-400 uppercase tracking-wider">Longest Streak</span>
+<svg class="h-5 w-5 text-purple-500" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+<div class="flex items-baseline gap-1">
+<span class="text-3xl font-bold text-white">45</span>
+<span class="text-sm text-gray-400">days</span>
+</div>
+</div>
+</section>
+<!-- END: StatsGrid -->
+<div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+<!-- BEGIN: ActivityHeatmap -->
+<div class="lg:col-span-2 rounded-xl border border-brand-border bg-brand-card p-6" data-purpose="activity-section">
+<div class="flex items-center justify-between mb-6">
+<h2 class="text-lg font-semibold text-white">Activity History</h2>
+<span class="text-xs text-gray-500">Last 90 days</span>
+</div>
+<!-- Heatmap Container -->
+<div class="overflow-x-auto">
+<div class="flex gap-1 min-w-[600px]" data-purpose="heatmap-display" id="heatmap-grid">
+<!-- Heatmap columns generated by JS for simulation -->
+</div>
+</div>
+<div class="mt-4 flex items-center justify-end gap-2 text-xs text-gray-500">
+<span>Less</span>
+<div class="h-3 w-3 rounded-sm bg-[#161b22] border border-white/5"></div>
+<div class="h-3 w-3 rounded-sm bg-[#0e4429]"></div>
+<div class="h-3 w-3 rounded-sm bg-[#006d32]"></div>
+<div class="h-3 w-3 rounded-sm bg-[#26a641]"></div>
+<div class="h-3 w-3 rounded-sm bg-[#39d353]"></div>
+<span>More</span>
+</div>
+</div>
+<!-- END: ActivityHeatmap -->
+<!-- BEGIN: StudySessionWidget -->
+<aside class="rounded-xl border border-brand-border bg-brand-card p-6" data-purpose="session-control">
+<h2 class="text-lg font-semibold text-white mb-4">Study Session</h2>
+<div class="space-y-4">
+<div>
+<label class="block text-sm font-medium text-gray-400 mb-1" for="topic">What are you working on?</label>
+<input class="w-full rounded-md border-brand-border bg-brand-dark px-4 py-2 text-sm text-white focus:border-brand-accent focus:ring-1 focus:ring-brand-accent outline-none transition-all" id="topic" placeholder="e.g. React Hooks, System Design" type="text"/>
+</div>
+<div class="rounded-lg bg-brand-dark/50 p-4 border border-brand-border/50">
+<div class="text-center">
+<span class="block text-xs uppercase tracking-widest text-gray-500 mb-1">Timer</span>
+<span class="text-4xl font-mono font-bold text-white tracking-tighter">00:00:00</span>
+</div>
+</div>
+<button class="w-full flex items-center justify-center gap-2 rounded-md bg-brand-accent px-4 py-3 font-semibold text-white transition-all hover:bg-opacity-90 active:scale-[0.98]" data-purpose="start-session-btn">
+<svg class="h-5 w-5" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+<path clip-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" fill-rule="evenodd"></path>
+</svg>
+            Start Session
+          </button>
+<p class="text-center text-[10px] text-gray-600 uppercase">Focus mode will be enabled</p>
+</div>
+</aside>
+<!-- END: StudySessionWidget -->
+</div>
+<!-- BEGIN: RecentLogs -->
+<section class="mt-8 rounded-xl border border-brand-border bg-brand-card overflow-hidden" data-purpose="recent-activity-list">
+<div class="border-b border-brand-border px-6 py-4">
+<h2 class="font-semibold text-white text-md">Recent Sessions</h2>
+</div>
+<div class="divide-y divide-brand-border">
+<!-- Mock Row 1 -->
+<div class="flex items-center justify-between px-6 py-4 hover:bg-white/5 transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-1.5 h-1.5 rounded-full bg-brand-accent"></div>
+<div>
+<p class="text-sm font-medium text-gray-200">Refactoring Authentication Flow</p>
+<p class="text-xs text-gray-500">2 hours ago</p>
+</div>
+</div>
+<span class="text-sm font-mono text-gray-400">1h 45m</span>
+</div>
+<!-- Mock Row 2 -->
+<div class="flex items-center justify-between px-6 py-4 hover:bg-white/5 transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-1.5 h-1.5 rounded-full bg-brand-accent"></div>
+<div>
+<p class="text-sm font-medium text-gray-200">LeetCode: Hard Problem 23</p>
+<p class="text-xs text-gray-500">Yesterday</p>
+</div>
+</div>
+<span class="text-sm font-mono text-gray-400">45m</span>
+</div>
+</div>
+</section>
+<!-- END: RecentLogs -->
+</main>
+<!-- BEGIN: Scripts -->
+<script data-purpose="heatmap-generator">
+    /**
+     * Simulates a GitHub activity heatmap
+     * Generates columns (weeks) and rows (days)
+     */
+    document.addEventListener('DOMContentLoaded', () => {
+      const grid = document.getElementById('heatmap-grid');
+      const levels = ['bg-[#161b22]', 'bg-[#0e4429]', 'bg-[#006d32]', 'bg-[#26a641]', 'bg-[#39d353]'];
+      
+      // We want to show 13 weeks (approx 90 days)
+      for (let i = 0; i < 24; i++) {
+        const column = document.createElement('div');
+        column.className = 'flex flex-col gap-1';
+        
+        for (let j = 0; j < 7; j++) {
+          const square = document.createElement('div');
+          // Randomly pick an intensity to simulate data
+          const intensity = Math.floor(Math.random() * 5);
+          square.className = `h-3 w-3 rounded-sm ${levels[intensity]} border border-white/5 hover:border-white/20 cursor-pointer`;
+          column.appendChild(square);
+        }
+        grid.appendChild(column);
+      }
+    });
+  </script>
+<!-- END: Scripts -->
+</body></html>

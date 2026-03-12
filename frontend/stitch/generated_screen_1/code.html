@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CodeTrack - Login</title>
+<!-- BEGIN: External Resources -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- END: External Resources -->
+<!-- BEGIN: Custom Styling -->
+<style data-purpose="typography">
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #0f1117;
+      color: #f3f4f6;
+    }
+  </style>
+<style data-purpose="custom-effects">
+    .glow-button {
+      box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
+      transition: all 0.3s ease;
+    }
+    .glow-button:hover {
+      box-shadow: 0 0 25px rgba(34, 197, 94, 0.4);
+      transform: translateY(-1px);
+    }
+    .input-focus:focus {
+      border-color: #22c55e !important;
+      ring-color: #22c55e !important;
+      outline: none;
+    }
+  </style>
+<!-- END: Custom Styling -->
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+<!-- BEGIN: Login Container -->
+<main class="w-full max-w-md" data-purpose="login-wrapper">
+<!-- BEGIN: Header/Logo Section -->
+<header class="text-center mb-8" data-purpose="app-branding">
+<div class="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-[#1f2937] mb-4 border border-gray-700">
+<!-- SVG Logo for CodeTrack -->
+<svg class="w-8 h-8 text-[#22c55e]" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<h1 class="text-3xl font-bold tracking-tight text-white">CodeTrack</h1>
+<p class="text-gray-400 mt-2 text-sm">Measure what matters in your workflow.</p>
+</header>
+<!-- END: Header/Logo Section -->
+<!-- BEGIN: Login Form Card -->
+<section class="bg-[#111827] border border-[#1f2937] rounded-xl shadow-2xl p-8" data-purpose="login-card">
+<form action="#" class="space-y-6" method="POST">
+<!-- Email Input Group -->
+<div data-purpose="form-group">
+<label class="block text-sm font-medium text-gray-300 mb-2" for="email">Email Address</label>
+<input class="w-full px-4 py-3 bg-[#0f1117] border border-[#1f2937] rounded-lg text-white placeholder-gray-500 transition-all input-focus focus:ring-1" id="email" name="email" placeholder="dev@codetrack.io" required="" type="email"/>
+</div>
+<!-- Password Input Group -->
+<div data-purpose="form-group">
+<div class="flex items-center justify-between mb-2">
+<label class="block text-sm font-medium text-gray-300" for="password">Password</label>
+<a class="text-xs text-[#22c55e] hover:underline" href="#">Forgot password?</a>
+</div>
+<input class="w-full px-4 py-3 bg-[#0f1117] border border-[#1f2937] rounded-lg text-white placeholder-gray-500 transition-all input-focus focus:ring-1" id="password" name="password" placeholder="••••••••" required="" type="password"/>
+</div>
+<!-- Submit Button -->
+<button class="w-full bg-[#22c55e] hover:bg-[#16a34a] text-white font-semibold py-3 px-4 rounded-lg glow-button focus:outline-none focus:ring-2 focus:ring-[#22c55e] focus:ring-offset-2 focus:ring-offset-[#0f1117]" type="submit">
+          Sign In
+        </button>
+</form>
+<!-- BEGIN: Secondary Actions -->
+<footer class="mt-8 pt-6 border-t border-[#1f2937] text-center" data-purpose="card-footer">
+<p class="text-sm text-gray-400">
+          New to the track? 
+          <a class="text-[#22c55e] font-medium hover:text-[#16a34a] transition-colors ml-1" href="#">Register for an account</a>
+</p>
+</footer>
+<!-- END: Secondary Actions -->
+</section>
+<!-- END: Login Form Card -->
+<!-- BEGIN: Support Links -->
+<nav class="mt-8 flex justify-center space-x-6 text-xs text-gray-500" data-purpose="footer-navigation">
+<a class="hover:text-gray-300" href="#">Privacy Policy</a>
+<a class="hover:text-gray-300" href="#">Terms of Service</a>
+<a class="hover:text-gray-300" href="#">Contact Support</a>
+</nav>
+<!-- END: Support Links -->
+</main>
+<!-- END: Login Container -->
+</body></html>
