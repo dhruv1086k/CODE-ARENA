@@ -1,5 +1,6 @@
 import express from 'express'
 import cookieParser from 'cookie-parser'
+import cors from 'cors'
 import authRouter from './routes/auth.route.js'
 import UserRouter from './routes/user.route.js'
 import TodoRouter from './routes/todo.route.js'
@@ -7,6 +8,12 @@ import studySessionRouter from './routes/study-session.route.js'
 
 const app = express()
 
+app.use(cors({
+    origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+}))
 app.use(express.static('public'))
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
