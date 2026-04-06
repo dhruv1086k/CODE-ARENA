@@ -46,30 +46,119 @@ function HeatmapGrid({ data }) {
     return 4;
   };
 
-  const formatDay = (day) => {
-    const d = new Date(day);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
+  // Build a map of dateString -> count for quick lookup
+  const countMap = {};
+  data.forEach((d) => { countMap[d.day.slice(0, 10)] = d.count; });
+
+  // Build full 90-day grid aligned to week boundaries (GitHub style)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const startDate = new Date(today);
+  startDate.setDate(today.getDate() - 89);
+
+  // Pad start to the nearest Sunday before startDate
+  const startDay = startDate.getDay();
+  const gridStart = new Date(startDate);
+  gridStart.setDate(startDate.getDate() - startDay);
+
+  // Build weeks array: each week is 7 days [Sun..Sat]
+  const weeks = [];
+  const cursor = new Date(gridStart);
+  while (cursor <= today) {
+    const week = [];
+    for (let d = 0; d < 7; d++) {
+      const dateStr = cursor.toISOString().slice(0, 10);
+      const inRange = cursor >= startDate && cursor <= today;
+      week.push({
+        dateStr,
+        count: inRange ? (countMap[dateStr] || 0) : null,
+        date: new Date(cursor),
+      });
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    weeks.push(week);
+  }
+
+  // Month labels: mark first week of each new month
+  const monthLabels = [];
+  weeks.forEach((week, wi) => {
+    const firstVisible = week.find((d) => d.count !== null);
+    if (!firstVisible) return;
+    const m = firstVisible.date.getMonth();
+    const prev = wi > 0 ? weeks[wi - 1].find((d) => d.count !== null) : null;
+    if (!prev || prev.date.getMonth() !== m) {
+      monthLabels.push({ wi, label: firstVisible.date.toLocaleDateString('en-US', { month: 'short' }) });
+    }
+  });
+
+  const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   return (
-    <div className="overflow-x-auto pb-2">
+    <div className="overflow-x-auto pb-2 select-none">
       <div className="flex gap-1 min-w-max">
-        {data.map((entry) => (
-          <div key={entry.day} className="relative group/cell">
-            <div
-              className={`w-3.5 h-3.5 rounded-[3px] cursor-default transition-all duration-150 group-hover/cell:scale-125 heat-${getIntensity(entry.count)}`}
-            />
-            {/* Tooltip */}
-            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-10 hidden group-hover/cell:block">
-              <div className="bg-[#1f2937] border border-[#374151] text-xs text-white rounded-lg px-2.5 py-1.5 whitespace-nowrap shadow-xl">
-                <span className="font-medium">{formatDay(entry.day)}</span>
-                <span className="text-gray-400 ml-1">— {entry.count} session{entry.count !== 1 ? 's' : ''}</span>
-              </div>
-              <div className="w-2 h-2 bg-[#1f2937] border-r border-b border-[#374151] rotate-45 absolute left-1/2 -translate-x-1/2 -bottom-1" />
+        {/* Day-of-week labels column */}
+        <div className="flex flex-col gap-[3px] mr-1 pt-5">
+          {DAY_LABELS.map((d, i) => (
+            <div key={d} className="h-3.5 flex items-center">
+              {[1, 3, 5].includes(i)
+                ? <span className="text-[9px] text-gray-600 w-6 leading-none">{d}</span>
+                : <span className="w-6" />}
             </div>
+          ))}
+        </div>
+
+        {/* Week columns */}
+        <div className="flex flex-col">
+          {/* Month label row */}
+          <div className="flex mb-1 h-4 relative">
+            {weeks.map((_, wi) => {
+              const ml = monthLabels.find((m) => m.wi === wi);
+              return (
+                <div key={wi} className="w-3.5 mr-[3px] relative">
+                  {ml && (
+                    <span className="absolute left-0 text-[9px] text-gray-500 whitespace-nowrap leading-none">
+                      {ml.label}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
           </div>
-        ))}
+
+          {/* Cell grid */}
+          <div className="flex gap-[3px] overflow-visible">
+            {weeks.map((week, wi) => (
+              <div key={wi} className="flex flex-col gap-[3px] overflow-visible">
+                {week.map((cell, di) => (
+                  <div key={di} className="relative group/cell">
+                    <div
+                      className={`w-3.5 h-3.5 rounded-[3px] transition-all duration-150 group-hover/cell:scale-125 ${cell.count === null
+                        ? 'opacity-0 pointer-events-none'
+                        : `heat-${getIntensity(cell.count)} cursor-default`
+                        }`}
+                    />
+                    {cell.count !== null && (
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 z-50 hidden group-hover/cell:block pointer-events-none">
+                        <div className="w-2 h-2 bg-[#1f2937] border-l border-t border-[#374151] rotate-45 absolute left-1/2 -translate-x-1/2 -top-1" />
+                        <div className="bg-[#1f2937] border border-[#374151] text-xs text-white rounded-lg px-2.5 py-1.5 whitespace-nowrap shadow-xl">
+                          <span className="font-medium">
+                            {cell.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </span>
+                          <span className="text-gray-400 ml-1">
+                            — {cell.count} session{cell.count !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
+
       {/* Legend */}
       <div className="flex items-center gap-1.5 mt-3">
         <span className="text-[11px] text-gray-600">Less</span>
@@ -153,8 +242,8 @@ function DashboardPage() {
   const todayISO = useMemo(() => {
     const now = new Date();
     const yyyy = now.getFullYear();
-    const mm   = String(now.getMonth() + 1).padStart(2, '0');
-    const dd   = String(now.getDate()).padStart(2, '0');
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
     return `${yyyy}-${mm}-${dd}`;
   }, []);
 
@@ -172,11 +261,11 @@ function DashboardPage() {
         const hm = heatmapRes?.data ?? heatmapRes;
         setStats({
           totalStudyTime: Number(sd?.totalStudyTime ?? 0),
-          totalSessions:  Number(sd?.totalSessions  ?? 0),
+          totalSessions: Number(sd?.totalSessions ?? 0),
         });
         setStreak({
           currentStreak: Number(sk?.currentStreak ?? 0),
-          longestStreak: Number(sk?.longestStreak  ?? 0),
+          longestStreak: Number(sk?.longestStreak ?? 0),
         });
         setHeatmap(Array.isArray(hm) ? hm : []);
       } catch { /* silent */ }
@@ -305,11 +394,10 @@ function DashboardPage() {
               type="button"
               onClick={handleToggleSession}
               disabled={loadingSession}
-              className={`w-full flex items-center justify-center gap-2 rounded-xl px-4 py-3.5 font-semibold text-sm transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg mt-auto ${
-                sessionActive
-                  ? 'bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20'
-                  : 'bg-[#22c55e] text-white hover:bg-[#16a34a] shadow-green-500/20 hover:shadow-green-500/30'
-              }`}
+              className={`w-full flex items-center justify-center gap-2 rounded-xl px-4 py-3.5 font-semibold text-sm transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg mt-auto ${sessionActive
+                ? 'bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20'
+                : 'bg-[#22c55e] text-white hover:bg-[#16a34a] shadow-green-500/20 hover:shadow-green-500/30'
+                }`}
             >
               {loadingSession ? (
                 <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
@@ -358,7 +446,7 @@ function DashboardPage() {
       </main>
 
       <footer className="text-center text-xs text-gray-700 py-4 border-t border-[#111827]">
-        © {new Date().getFullYear()} CodeTrack — Build with focus. Stay consistent.
+        © {new Date().getFullYear()} CodeArena — Build with focus. Stay consistent.
       </footer>
     </div>
   );

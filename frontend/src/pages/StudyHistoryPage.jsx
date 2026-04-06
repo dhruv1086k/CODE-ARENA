@@ -65,12 +65,14 @@ function StudyHistoryPage() {
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
 
-  const loadSessions = async (p = 1) => {
+  const loadSessions = async (p = 1, overrides = {}) => {
     setLoading(true);
     try {
+      const activeDate  = 'date'  in overrides ? overrides.date  : date;
+      const activeTopic = 'topic' in overrides ? overrides.topic : topic;
       const params = new URLSearchParams({ page: String(p), limit: '15' });
-      if (date) params.set('sessionDate', date);
-      if (topic.trim()) params.set('topic', topic.trim());
+      if (activeDate) params.set('sessionDate', activeDate);
+      if (activeTopic.trim()) params.set('topic', activeTopic.trim());
       const res = await apiFetch(`/api/v1/study-session?${params}`, { auth: true });
       const data = res?.data || res;
       setSessions(data?.Sessions || data?.sessions || []);
@@ -95,7 +97,8 @@ function StudyHistoryPage() {
     setDate('');
     setTopic('');
     setPage(1);
-    setTimeout(() => loadSessions(1), 0);
+    // Pass cleared values directly to avoid stale closure reads
+    loadSessions(1, { date: '', topic: '' });
   };
 
   const totalStudyTime = sessions.reduce((s, sess) => s + (Number(sess.duration) || 0), 0);

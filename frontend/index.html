@@ -1,250 +1,442 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CodeTrack — Track Your Coding Journey</title>
-    <meta name="description" content="CodeTrack is a developer productivity tool to track your study sessions, todos, streaks, and coding focus time." />
-    <!-- Theme init: run BEFORE paint to avoid flash of wrong theme -->
-    <script>
-      (function() {
-        var saved = localStorage.getItem('ct-theme');
-        var theme = saved === 'light' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', theme);
-      })();
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- ── Primary SEO ─────────────────────────────────────────────── -->
+  <title>CodeArena — Track Your Coding Consistency &amp; Build Streaks</title>
+  <meta name="description"
+    content="CodeArena is a developer-built study tracker. Log coding sessions, build daily streaks, visualize a GitHub-style activity heatmap, and manage dev tasks — all in one focused tool." />
+  <meta name="keywords"
+    content="coding tracker, developer productivity, coding streak, study sessions, activity heatmap, DSA practice, LeetCode tracker, developer tool, backend project, Node.js" />
+  <meta name="author" content="Dhruv Pal" />
+  <meta name="robots" content="index, follow" />
+  <link rel="canonical" href="https://code-arena-dp.vercel.app/" />
+
+  <!-- ── Open Graph (LinkedIn, Facebook, WhatsApp preview) ──────────── -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="CodeArena" />
+  <meta property="og:title" content="CodeArena — Stop Guessing How Much You Code" />
+  <meta property="og:description"
+    content="A focused coding session tracker for developers. Log sessions, build streaks, visualize your heatmap, and know exactly how consistent you are. Built with Node.js, Redis, JWT auth &amp; OTP flows." />
+  <meta property="og:url" content="https://code-arena-dp.vercel.app/" />
+  <meta property="og:image" content="https://code-arena-dp.vercel.app/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt"
+    content="CodeArena dashboard showing coding streak, session timer, and activity heatmap" />
+  <meta property="og:locale" content="en_US" />
+
+  <!-- ── Twitter / X Card ───────────────────────────────────────── -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="CodeArena — Track Your Coding Consistency" />
+  <meta name="twitter:description"
+    content="Built for developers who want data, not guesses. Log sessions, build streaks, and visualize consistency with a GitHub-style heatmap." />
+  <meta name="twitter:image" content="https://code-arena-dp.vercel.app/og-image.png" />
+
+  <!-- ── Favicon (inline SVG — crisp at any size) ────────────────── -->
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230d1117'/><text x='3' y='23' font-family='monospace' font-weight='900' font-size='19' fill='%2322c55e'>CA</text></svg>" />
+
+  <!-- ── JSON-LD Structured Data ─────────────────────────────── -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "CodeArena",
+      "url": "https://code-arena-dp.vercel.app/",
+      "description": "A developer productivity tool to track coding sessions, build streaks, and visualize activity via a heatmap. Built with Node.js, Express, MongoDB, Redis, and React.",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "Web Browser",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "author": { "@type": "Person", "name": "Dhruv Pal" },
+      "featureList": [
+        "Session timer with topic tagging",
+        "Daily coding streak tracking",
+        "GitHub-style 90-day activity heatmap",
+        "Developer task board",
+        "OTP-based forgot/change password",
+        "JWT auth with refresh tokens",
+        "Redis response caching",
+        "OpenAPI 3.0 / Swagger documentation"
+      ]
+    }
     </script>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              brand: {
-                green: '#22c55e',
-                greenDark: '#16a34a',
-                bg: '#0a0d14',
-                surface: '#111827',
-                surface2: '#1a2235',
-                border: '#1f2937',
-                muted: '#6b7280',
-              },
-            },
-            fontFamily: {
-              sans: ['Inter', 'system-ui', 'sans-serif'],
-            },
-            animation: {
-              'fade-in': 'fadeIn 0.3s ease-out',
-              'slide-up': 'slideUp 0.4s ease-out',
-              'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            },
-            keyframes: {
-              fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
-              slideUp: { '0%': { opacity: '0', transform: 'translateY(12px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+  <!-- Theme init: run BEFORE paint to avoid flash of wrong theme -->
+  <script>
+    (function () {
+      var saved = localStorage.getItem('ct-theme');
+      var theme = saved === 'light' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              green: '#22c55e',
+              greenDark: '#16a34a',
+              bg: '#0a0d14',
+              surface: '#111827',
+              surface2: '#1a2235',
+              border: '#1f2937',
+              muted: '#6b7280',
             },
           },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.3s ease-out',
+            'slide-up': 'slideUp 0.4s ease-out',
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          },
+          keyframes: {
+            fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+            slideUp: { '0%': { opacity: '0', transform: 'translateY(12px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+          },
         },
-      };
-    </script>
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-    <!-- Material Symbols -->
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
-    <style>
-      /* ── CSS Theme Variables ─────────────────────────────────── */
-      :root, [data-theme="dark"] {
-        --ct-bg:          #0a0d14;
-        --ct-surface:     #111827;
-        --ct-surface2:    #1a2235;
-        --ct-border:      #1f2937;
-        --ct-border2:     #374151;
-        --ct-text:        #f3f4f6;
-        --ct-text-muted:  #6b7280;
-        --ct-text-dim:    #374151;
-        --ct-input-bg:    #0a0d14;
-        --ct-heat-0:      #161b22;
-        --ct-scrollbar:   #1f2937;
-        --ct-scrollbar-h: #374151;
-        --ct-checkbox-bg: #0a0d14;
-        --ct-checkbox-bd: #374151;
+      },
+    };
+  </script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet" />
+  <!-- Material Symbols -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+    rel="stylesheet" />
+  <style>
+    /* ── CSS Theme Variables ─────────────────────────────────── */
+    :root,
+    [data-theme="dark"] {
+      --ct-bg: #0a0d14;
+      --ct-surface: #111827;
+      --ct-surface2: #1a2235;
+      --ct-border: #1f2937;
+      --ct-border2: #374151;
+      --ct-text: #f3f4f6;
+      --ct-text-muted: #6b7280;
+      --ct-text-dim: #374151;
+      --ct-input-bg: #0a0d14;
+      --ct-heat-0: #161b22;
+      --ct-scrollbar: #1f2937;
+      --ct-scrollbar-h: #374151;
+      --ct-checkbox-bg: #0a0d14;
+      --ct-checkbox-bd: #374151;
+    }
+
+    [data-theme="light"] {
+      --ct-bg: #f0f4f8;
+      --ct-surface: #ffffff;
+      --ct-surface2: #f1f5f9;
+      --ct-border: #e2e8f0;
+      --ct-border2: #cbd5e1;
+      --ct-text: #0f172a;
+      --ct-text-muted: #64748b;
+      --ct-text-dim: #94a3b8;
+      --ct-input-bg: #f8fafc;
+      --ct-heat-0: #e2e8f0;
+      --ct-scrollbar: #e2e8f0;
+      --ct-scrollbar-h: #cbd5e1;
+      --ct-checkbox-bg: #f8fafc;
+      --ct-checkbox-bd: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background-color: var(--ct-bg);
+      color: var(--ct-text);
+      margin: 0;
+      -webkit-font-smoothing: antialiased;
+      transition: background-color 0.25s ease, color 0.2s ease;
+    }
+
+    #root {
+      min-height: 100vh;
+    }
+
+    .material-symbols-rounded {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      user-select: none;
+      line-height: 1;
+      vertical-align: middle;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--ct-scrollbar);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--ct-scrollbar-h);
+    }
+
+    /* Input custom styles */
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.5);
+      cursor: pointer;
+    }
+
+    [data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.3);
+    }
+
+    /* Glow effects */
+    .glow-green {
+      box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+    }
+
+    .glow-green:hover {
+      box-shadow: 0 0 30px rgba(34, 197, 94, 0.5);
+    }
+
+    /* Heatmap cells */
+    .heat-0 {
+      background: var(--ct-heat-0);
+    }
+
+    .heat-1 {
+      background: #0e4429;
+    }
+
+    .heat-2 {
+      background: #006d32;
+    }
+
+    .heat-3 {
+      background: #26a641;
+    }
+
+    .heat-4 {
+      background: #39d353;
+    }
+
+    [data-theme="light"] .heat-1 {
+      background: #bbf7d0;
+    }
+
+    [data-theme="light"] .heat-2 {
+      background: #86efac;
+    }
+
+    [data-theme="light"] .heat-3 {
+      background: #4ade80;
+    }
+
+    [data-theme="light"] .heat-4 {
+      background: #22c55e;
+    }
+
+    /* Animated gradient border */
+    .gradient-border {
+      position: relative;
+      background: linear-gradient(135deg, var(--ct-surface), var(--ct-bg));
+    }
+
+    .gradient-border::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 1px;
+      background: linear-gradient(135deg, #22c55e20, var(--ct-border), #22c55e10);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    /* Nav active indicator */
+    .nav-active {
+      color: #22c55e !important;
+    }
+
+    .nav-active::after {
+      content: '';
+      display: block;
+      height: 2px;
+      background: #22c55e;
+      border-radius: 1px;
+      margin-top: 2px;
+    }
+
+    /* Checkbox custom */
+    input[type="checkbox"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 1.125rem;
+      height: 1.125rem;
+      border: 2px solid var(--ct-checkbox-bd);
+      border-radius: 4px;
+      background: var(--ct-checkbox-bg);
+      cursor: pointer;
+      transition: all 0.15s;
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+    }
+
+    input[type="checkbox"]:checked {
+      background: #22c55e;
+      border-color: #22c55e;
+    }
+
+    input[type="checkbox"]:checked::before {
+      content: '';
+      width: 0.5rem;
+      height: 0.3rem;
+      border-left: 2px solid white;
+      border-bottom: 2px solid white;
+      transform: rotate(-45deg) translateY(-1px);
+      display: block;
+    }
+
+    input[type="checkbox"]:hover {
+      border-color: #22c55e;
+    }
+
+    /* Session timer pulse */
+    @keyframes timer-pulse {
+
+      0%,
+      100% {
+        opacity: 1;
       }
-      [data-theme="light"] {
-        --ct-bg:          #f0f4f8;
-        --ct-surface:     #ffffff;
-        --ct-surface2:    #f1f5f9;
-        --ct-border:      #e2e8f0;
-        --ct-border2:     #cbd5e1;
-        --ct-text:        #0f172a;
-        --ct-text-muted:  #64748b;
-        --ct-text-dim:    #94a3b8;
-        --ct-input-bg:    #f8fafc;
-        --ct-heat-0:      #e2e8f0;
-        --ct-scrollbar:   #e2e8f0;
-        --ct-scrollbar-h: #cbd5e1;
-        --ct-checkbox-bg: #f8fafc;
-        --ct-checkbox-bd: #94a3b8;
+
+      50% {
+        opacity: 0.5;
       }
+    }
 
-      * { box-sizing: border-box; }
-      body {
-        font-family: 'Inter', system-ui, sans-serif;
-        background-color: var(--ct-bg);
-        color: var(--ct-text);
-        margin: 0;
-        -webkit-font-smoothing: antialiased;
-        transition: background-color 0.25s ease, color 0.2s ease;
-      }
-      #root { min-height: 100vh; }
+    .timer-active {
+      animation: timer-pulse 2s ease-in-out infinite;
+    }
 
-      .material-symbols-rounded {
-        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        user-select: none;
-        line-height: 1;
-        vertical-align: middle;
-      }
+    /* Smooth theme transitions on key surfaces */
+    .ct-surface {
+      background-color: var(--ct-surface);
+      border-color: var(--ct-border);
+      transition: background-color 0.25s ease, border-color 0.25s ease;
+    }
 
-      /* Scrollbar */
-      ::-webkit-scrollbar { width: 6px; height: 6px; }
-      ::-webkit-scrollbar-track { background: transparent; }
-      ::-webkit-scrollbar-thumb { background: var(--ct-scrollbar); border-radius: 3px; }
-      ::-webkit-scrollbar-thumb:hover { background: var(--ct-scrollbar-h); }
+    /* Page entrance animation */
+    .page-enter {
+      animation: fadeIn 0.3s ease-out;
+    }
 
-      /* Input custom styles */
-      input[type="date"]::-webkit-calendar-picker-indicator {
-        filter: invert(0.5);
-        cursor: pointer;
-      }
-      [data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator {
-        filter: invert(0.3);
-      }
+    /* ── Light mode Tailwind class overrides ─────────────────── */
+    /* These override the hardcoded Tailwind dark colours in JSX  */
+    [data-theme="light"] .text-white {
+      color: var(--ct-text) !important;
+    }
 
-      /* Glow effects */
-      .glow-green { box-shadow: 0 0 20px rgba(34, 197, 94, 0.3); }
-      .glow-green:hover { box-shadow: 0 0 30px rgba(34, 197, 94, 0.5); }
+    [data-theme="light"] .text-gray-100 {
+      color: #1e293b !important;
+    }
 
-      /* Heatmap cells */
-      .heat-0 { background: var(--ct-heat-0); }
-      .heat-1 { background: #0e4429; }
-      .heat-2 { background: #006d32; }
-      .heat-3 { background: #26a641; }
-      .heat-4 { background: #39d353; }
-      [data-theme="light"] .heat-1 { background: #bbf7d0; }
-      [data-theme="light"] .heat-2 { background: #86efac; }
-      [data-theme="light"] .heat-3 { background: #4ade80; }
-      [data-theme="light"] .heat-4 { background: #22c55e; }
+    [data-theme="light"] .text-gray-300 {
+      color: #334155 !important;
+    }
 
-      /* Animated gradient border */
-      .gradient-border {
-        position: relative;
-        background: linear-gradient(135deg, var(--ct-surface), var(--ct-bg));
-      }
-      .gradient-border::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        border-radius: inherit;
-        padding: 1px;
-        background: linear-gradient(135deg, #22c55e20, var(--ct-border), #22c55e10);
-        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-        -webkit-mask-composite: xor;
-        mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-        mask-composite: exclude;
-        pointer-events: none;
-      }
+    [data-theme="light"] .text-gray-400 {
+      color: #475569 !important;
+    }
 
-      /* Nav active indicator */
-      .nav-active { color: #22c55e !important; }
-      .nav-active::after {
-        content: '';
-        display: block;
-        height: 2px;
-        background: #22c55e;
-        border-radius: 1px;
-        margin-top: 2px;
-      }
+    [data-theme="light"] .text-gray-500 {
+      color: #64748b !important;
+    }
 
-      /* Checkbox custom */
-      input[type="checkbox"] {
-        appearance: none;
-        -webkit-appearance: none;
-        width: 1.125rem;
-        height: 1.125rem;
-        border: 2px solid var(--ct-checkbox-bd);
-        border-radius: 4px;
-        background: var(--ct-checkbox-bg);
-        cursor: pointer;
-        transition: all 0.15s;
-        flex-shrink: 0;
-        display: grid;
-        place-items: center;
-      }
-      input[type="checkbox"]:checked {
-        background: #22c55e;
-        border-color: #22c55e;
-      }
-      input[type="checkbox"]:checked::before {
-        content: '';
-        width: 0.5rem;
-        height: 0.3rem;
-        border-left: 2px solid white;
-        border-bottom: 2px solid white;
-        transform: rotate(-45deg) translateY(-1px);
-        display: block;
-      }
-      input[type="checkbox"]:hover { border-color: #22c55e; }
+    [data-theme="light"] .text-gray-600 {
+      color: #94a3b8 !important;
+    }
 
-      /* Session timer pulse */
-      @keyframes timer-pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
-      }
-      .timer-active { animation: timer-pulse 2s ease-in-out infinite; }
+    [data-theme="light"] .text-gray-700 {
+      color: #cbd5e1 !important;
+    }
 
-      /* Smooth theme transitions on key surfaces */
-      .ct-surface {
-        background-color: var(--ct-surface);
-        border-color: var(--ct-border);
-        transition: background-color 0.25s ease, border-color 0.25s ease;
-      }
+    [data-theme="light"] .bg-\[\#0a0d14\] {
+      background-color: var(--ct-bg) !important;
+    }
 
-      /* Page entrance animation */
-      .page-enter { animation: fadeIn 0.3s ease-out; }
+    [data-theme="light"] .bg-\[\#111827\] {
+      background-color: var(--ct-surface) !important;
+    }
 
-      /* ── Light mode Tailwind class overrides ─────────────────── */
-      /* These override the hardcoded Tailwind dark colours in JSX  */
-      [data-theme="light"] .text-white   { color: var(--ct-text)   !important; }
-      [data-theme="light"] .text-gray-100 { color: #1e293b !important; }
-      [data-theme="light"] .text-gray-300 { color: #334155 !important; }
-      [data-theme="light"] .text-gray-400 { color: #475569 !important; }
-      [data-theme="light"] .text-gray-500 { color: #64748b !important; }
-      [data-theme="light"] .text-gray-600 { color: #94a3b8 !important; }
-      [data-theme="light"] .text-gray-700 { color: #cbd5e1 !important; }
+    [data-theme="light"] .bg-\[\#1a2235\] {
+      background-color: var(--ct-surface2) !important;
+    }
 
-      [data-theme="light"] .bg-\[\#0a0d14\]  { background-color: var(--ct-bg)      !important; }
-      [data-theme="light"] .bg-\[\#111827\]  { background-color: var(--ct-surface)  !important; }
-      [data-theme="light"] .bg-\[\#1a2235\]  { background-color: var(--ct-surface2) !important; }
-      [data-theme="light"] .bg-\[\#1f2937\]  { background-color: #e2e8f0 !important; }
-      [data-theme="light"] .bg-\[\#374151\]  { background-color: #cbd5e1 !important; }
+    [data-theme="light"] .bg-\[\#1f2937\] {
+      background-color: #e2e8f0 !important;
+    }
 
-      [data-theme="light"] .border-\[\#1f2937\] { border-color: var(--ct-border)  !important; }
-      [data-theme="light"] .border-\[\#1a2235\] { border-color: var(--ct-border)  !important; }
-      [data-theme="light"] .border-\[\#374151\] { border-color: var(--ct-border2) !important; }
+    [data-theme="light"] .bg-\[\#374151\] {
+      background-color: #cbd5e1 !important;
+    }
 
-      [data-theme="light"] .hover\:border-\[\#374151\]:hover { border-color: var(--ct-border2) !important; }
-      [data-theme="light"] .hover\:bg-\[\#1f2937\]:hover     { background-color: #e2e8f0 !important; }
-      [data-theme="light"] .hover\:bg-\[\#374151\]:hover     { background-color: #cbd5e1 !important; }
+    [data-theme="light"] .border-\[\#1f2937\] {
+      border-color: var(--ct-border) !important;
+    }
 
-      [data-theme="light"] .placeholder-gray-600::placeholder { color: #94a3b8; }
+    [data-theme="light"] .border-\[\#1a2235\] {
+      border-color: var(--ct-border) !important;
+    }
 
-      /* Navbar light mode */
-      [data-theme="light"] nav { background-color: rgba(255,255,255,0.9) !important; border-bottom-color: var(--ct-border) !important; }
-    </style>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+    [data-theme="light"] .border-\[\#374151\] {
+      border-color: var(--ct-border2) !important;
+    }
+
+    [data-theme="light"] .hover\:border-\[\#374151\]:hover {
+      border-color: var(--ct-border2) !important;
+    }
+
+    [data-theme="light"] .hover\:bg-\[\#1f2937\]:hover {
+      background-color: #e2e8f0 !important;
+    }
+
+    [data-theme="light"] .hover\:bg-\[\#374151\]:hover {
+      background-color: #cbd5e1 !important;
+    }
+
+    [data-theme="light"] .placeholder-gray-600::placeholder {
+      color: #94a3b8;
+    }
+
+    /* Navbar light mode */
+    [data-theme="light"] nav {
+      background-color: rgba(255, 255, 255, 0.9) !important;
+      border-bottom-color: var(--ct-border) !important;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
 </html>

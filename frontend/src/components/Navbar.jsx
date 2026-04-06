@@ -1,11 +1,11 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext.jsx';
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext.jsx";
 
 const navItems = [
-  { path: '/dashboard', label: 'Home', icon: 'dashboard' },
-  { path: '/history', label: 'History', icon: 'history' },
-  { path: '/todos', label: 'Tasks', icon: 'checklist' },
-  { path: '/settings', label: 'Settings', icon: 'settings' },
+  { path: "/dashboard", label: "Home", icon: "dashboard" },
+  { path: "/history", label: "History", icon: "history" },
+  { path: "/todos", label: "Tasks", icon: "checklist" },
+  { path: "/settings", label: "Settings", icon: "settings" },
 ];
 
 export function Navbar() {
@@ -15,24 +15,27 @@ export function Navbar() {
 
   const handleLogout = async () => {
     await logout();
-    navigate('/login');
+    navigate("/login");
   };
 
   const initials = user?.name
-    ? user.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
-    : 'U';
+    ? user.name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase()
+    : "U";
 
   return (
     <header className="sticky top-0 z-50 bg-[#0a0d14]/90 backdrop-blur-md border-b border-[#1f2937]">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link to="/dashboard" className="flex items-center gap-2.5 group">
-          <div className="w-8 h-8 rounded-lg bg-brand-green flex items-center justify-center shadow-lg shadow-green-500/20 group-hover:shadow-green-500/40 transition-shadow">
-            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-              <path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
-          <span className="text-lg font-bold tracking-tight text-white">CodeTrack</span>
+        <Link to="/" className="flex items-center gap-1 group">
+          <span className="flex flex-col leading-none group-hover:opacity-80 transition-opacity">
+            <span className="text-[9px] font-bold tracking-[0.3em] text-gray-500 uppercase font-mono">Code</span>
+            <span className="text-[17px] font-black tracking-tight text-[#22c55e] uppercase font-mono leading-none">Arena</span>
+          </span>
         </Link>
 
         {/* Desktop Nav */}
@@ -43,13 +46,14 @@ export function Navbar() {
               <Link
                 key={path}
                 to={path}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
-                  active
-                    ? 'text-[#22c55e] bg-[#22c55e]/10'
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
-                }`}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${active
+                  ? "text-[#22c55e] bg-[#22c55e]/10"
+                  : "text-gray-400 hover:text-white hover:bg-white/5"
+                  }`}
               >
-                <span className="material-symbols-rounded text-[18px]">{icon}</span>
+                <span className="material-symbols-rounded text-[18px]">
+                  {icon}
+                </span>
                 {label}
               </Link>
             );
@@ -84,11 +88,12 @@ export function Navbar() {
             <Link
               key={path}
               to={path}
-              className={`flex-1 flex flex-col items-center gap-1 py-3 text-[10px] font-medium transition-all ${
-                active ? 'text-[#22c55e]' : 'text-gray-500 hover:text-gray-300'
-              }`}
+              className={`flex-1 flex flex-col items-center gap-1 py-3 text-[10px] font-medium transition-all ${active ? "text-[#22c55e]" : "text-gray-500 hover:text-gray-300"
+                }`}
             >
-              <span className="material-symbols-rounded text-[22px]">{icon}</span>
+              <span className="material-symbols-rounded text-[22px]">
+                {icon}
+              </span>
               {label}
             </Link>
           );
