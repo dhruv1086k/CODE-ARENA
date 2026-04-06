@@ -27,7 +27,7 @@ app.use(helmet({
 
 // ── CORS ─────────────────────────────────────────────────────────────────────
 // FRONTEND_URLS = comma-separated list of allowed origins
-// e.g. "http://localhost:5173,https://code-arena-dp.vercel.app"
+// e.g. "http://localhost:5173,https://codearena.diy"
 const allowedOrigins = (process.env.FRONTEND_URLS || 'http://localhost:5173')
     .split(',')
     .map(o => o.trim())
