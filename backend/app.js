@@ -54,6 +54,7 @@ app.use(express.json({ limit: '10kb' }))          // cap body size
 app.use(express.urlencoded({ extended: true, limit: '10kb' }))
 app.use(cookieParser())
 app.use(express.static('public'))
+app.set("trust proxy", 1);
 
 // ── Swagger UI — served at /api-docs ─────────────────────────────────────────
 app.use(
