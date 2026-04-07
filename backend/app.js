@@ -75,6 +75,11 @@ app.get('/api-docs.json', (req, res) => {
     res.send(swaggerSpec)
 })
 
+// Backend up
+app.get("/ping", (req, res) => {
+    res.status(200).send("Server is alive");
+});
+
 // ── Health check ──────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() })
