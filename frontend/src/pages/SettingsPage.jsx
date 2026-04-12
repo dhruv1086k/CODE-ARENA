@@ -24,7 +24,10 @@ function OtpInput({ value, onChange, disabled }) {
   };
 
   const handlePaste = (e) => {
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
     onChange(pasted.padEnd(6, "").slice(0, 6).trimEnd());
     inputs.current[Math.min(pasted.length, 5)]?.focus();
   };
@@ -54,7 +57,11 @@ function OtpInput({ value, onChange, disabled }) {
 function ChangePasswordModal({ userEmail, onClose }) {
   const [step, setStep] = useState(1);
   const [otp, setOtp] = useState("");
-  const [form, setForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  const [form, setForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
   const [saving, setSaving] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
@@ -65,7 +72,13 @@ function ChangePasswordModal({ userEmail, onClose }) {
   const startCooldown = () => {
     setResendCooldown(60);
     const t = setInterval(() => {
-      setResendCooldown((v) => { if (v <= 1) { clearInterval(t); return 0; } return v - 1; });
+      setResendCooldown((v) => {
+        if (v <= 1) {
+          clearInterval(t);
+          return 0;
+        }
+        return v - 1;
+      });
     }, 1000);
   };
 
@@ -74,7 +87,10 @@ function ChangePasswordModal({ userEmail, onClose }) {
     setError("");
     setSending(true);
     try {
-      await apiFetch("/api/v1/users/send-change-password-otp", { method: "POST", auth: true });
+      await apiFetch("/api/v1/users/send-change-password-otp", {
+        method: "POST",
+        auth: true,
+      });
       setStep(2);
       startCooldown();
     } catch (err) {
@@ -84,23 +100,39 @@ function ChangePasswordModal({ userEmail, onClose }) {
     }
   };
 
-  useEffect(() => { handleSendOtp(); }, []); // auto-send on open
+  useEffect(() => {
+    handleSendOtp();
+  }, []); // auto-send on open
 
-  const handleChange = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+  const handleChange = (e) =>
+    setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
 
   // Step 2: submit
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    if (otp.length < 6) { setError("Please enter the complete 6-digit OTP."); return; }
-    if (form.newPassword !== form.confirmPassword) { setError("New passwords do not match."); return; }
-    if (form.newPassword.length < 6) { setError("New password must be at least 6 characters."); return; }
+    if (otp.length < 6) {
+      setError("Please enter the complete 6-digit OTP.");
+      return;
+    }
+    if (form.newPassword !== form.confirmPassword) {
+      setError("New passwords do not match.");
+      return;
+    }
+    if (form.newPassword.length < 6) {
+      setError("New password must be at least 6 characters.");
+      return;
+    }
     setSaving(true);
     try {
       await apiFetch("/api/v1/users/change-password", {
         method: "PATCH",
         auth: true,
-        body: { otp, currentPassword: form.currentPassword, newPassword: form.newPassword },
+        body: {
+          otp,
+          currentPassword: form.currentPassword,
+          newPassword: form.newPassword,
+        },
       });
       onClose(true);
     } catch (err) {
@@ -116,10 +148,15 @@ function ChangePasswordModal({ userEmail, onClose }) {
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-[#1f2937]">
           <div className="flex items-center gap-2">
-            <span className="material-symbols-rounded text-[20px] text-[#22c55e]">lock</span>
+            <span className="material-symbols-rounded text-[20px] text-[#22c55e]">
+              lock
+            </span>
             <h2 className="font-semibold text-white">Change Password</h2>
           </div>
-          <button onClick={() => onClose(false)} className="text-gray-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/5">
+          <button
+            onClick={() => onClose(false)}
+            className="text-gray-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/5"
+          >
             <span className="material-symbols-rounded text-[20px]">close</span>
           </button>
         </div>
@@ -128,11 +165,28 @@ function ChangePasswordModal({ userEmail, onClose }) {
           {/* Step 1: sending spinner */}
           {step === 1 && (
             <div className="flex flex-col items-center gap-3 py-6 text-gray-400">
-              <svg className="animate-spin h-8 w-8 text-[#22c55e]" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              <svg
+                className="animate-spin h-8 w-8 text-[#22c55e]"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
               </svg>
-              <p className="text-sm">Sending OTP to <span className="text-white">{userEmail}</span>…</p>
+              <p className="text-sm">
+                Sending OTP to <span className="text-white">{userEmail}</span>…
+              </p>
             </div>
           )}
 
@@ -141,58 +195,125 @@ function ChangePasswordModal({ userEmail, onClose }) {
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
                 <div className="flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 px-3.5 py-2.5 text-sm text-red-400">
-                  <span className="material-symbols-rounded text-[16px]">error</span>
+                  <span className="material-symbols-rounded text-[16px]">
+                    error
+                  </span>
                   {error}
                 </div>
               )}
 
               <div>
-                <p className="text-xs text-gray-400 mb-3">A 6-digit OTP was sent to <span className="text-white font-medium">{userEmail}</span>. Enter it below along with your passwords.</p>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">OTP Code</label>
+                <p className="text-xs text-gray-400 mb-3">
+                  A 6-digit OTP was sent to{" "}
+                  <span className="text-white font-medium">{userEmail}</span>.
+                  Enter it below along with your passwords.
+                </p>
+                <p className="text-green-500 text-xs">
+                  OTP sent! Check inbox or spam folder.
+                </p>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                  OTP Code
+                </label>
                 <OtpInput value={otp} onChange={setOtp} disabled={saving} />
                 <div className="text-center mt-2">
-                  {resendCooldown > 0
-                    ? <span className="text-xs text-gray-600">Resend in {resendCooldown}s</span>
-                    : <button type="button" onClick={handleSendOtp} disabled={sending} className="text-xs text-[#22c55e] hover:text-green-400 transition-colors">Resend OTP</button>
-                  }
+                  {resendCooldown > 0 ? (
+                    <span className="text-xs text-gray-600">
+                      Resend in {resendCooldown}s
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleSendOtp}
+                      disabled={sending}
+                      className="text-xs text-[#22c55e] hover:text-green-400 transition-colors"
+                    >
+                      Resend OTP
+                    </button>
+                  )}
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Current Password</label>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                  Current Password
+                </label>
                 <div className="relative">
-                  <input name="currentPassword" type={showCurrent ? "text" : "password"} required value={form.currentPassword} onChange={handleChange}
+                  <input
+                    name="currentPassword"
+                    type={showCurrent ? "text" : "password"}
+                    required
+                    value={form.currentPassword}
+                    onChange={handleChange}
                     className="w-full bg-[#0a0d14] border border-[#1f2937] rounded-xl px-4 py-3 pr-11 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e]/40 transition-all"
-                    placeholder="Your current password" />
-                  <button type="button" onClick={() => setShowCurrent(!showCurrent)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors">
-                    <span className="material-symbols-rounded text-[20px]">{showCurrent ? "visibility_off" : "visibility"}</span>
+                    placeholder="Your current password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrent(!showCurrent)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+                  >
+                    <span className="material-symbols-rounded text-[20px]">
+                      {showCurrent ? "visibility_off" : "visibility"}
+                    </span>
                   </button>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">New Password</label>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                  New Password
+                </label>
                 <div className="relative">
-                  <input name="newPassword" type={showNew ? "text" : "password"} required minLength={6} value={form.newPassword} onChange={handleChange}
+                  <input
+                    name="newPassword"
+                    type={showNew ? "text" : "password"}
+                    required
+                    minLength={6}
+                    value={form.newPassword}
+                    onChange={handleChange}
                     className="w-full bg-[#0a0d14] border border-[#1f2937] rounded-xl px-4 py-3 pr-11 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e]/40 transition-all"
-                    placeholder="At least 6 characters" />
-                  <button type="button" onClick={() => setShowNew(!showNew)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors">
-                    <span className="material-symbols-rounded text-[20px]">{showNew ? "visibility_off" : "visibility"}</span>
+                    placeholder="At least 6 characters"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNew(!showNew)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+                  >
+                    <span className="material-symbols-rounded text-[20px]">
+                      {showNew ? "visibility_off" : "visibility"}
+                    </span>
                   </button>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Confirm New Password</label>
-                <input name="confirmPassword" type="password" required value={form.confirmPassword} onChange={handleChange}
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                  Confirm New Password
+                </label>
+                <input
+                  name="confirmPassword"
+                  type="password"
+                  required
+                  value={form.confirmPassword}
+                  onChange={handleChange}
                   className="w-full bg-[#0a0d14] border border-[#1f2937] rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e]/40 transition-all"
-                  placeholder="Repeat new password" />
+                  placeholder="Repeat new password"
+                />
               </div>
 
               <div className="flex gap-3 pt-1">
-                <button type="button" onClick={() => onClose(false)} className="flex-1 bg-[#1f2937] hover:bg-[#374151] text-gray-300 font-medium py-3 px-4 rounded-xl transition-all text-sm">Cancel</button>
-                <button type="submit" disabled={saving}
-                  className="flex-1 bg-[#22c55e] hover:bg-[#16a34a] disabled:opacity-50 text-white font-semibold py-3 px-4 rounded-xl transition-all text-sm shadow-lg shadow-green-500/20 active:scale-[0.98]">
+                <button
+                  type="button"
+                  onClick={() => onClose(false)}
+                  className="flex-1 bg-[#1f2937] hover:bg-[#374151] text-gray-300 font-medium py-3 px-4 rounded-xl transition-all text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="flex-1 bg-[#22c55e] hover:bg-[#16a34a] disabled:opacity-50 text-white font-semibold py-3 px-4 rounded-xl transition-all text-sm shadow-lg shadow-green-500/20 active:scale-[0.98]"
+                >
                   {saving ? "Saving…" : "Update Password"}
                 </button>
               </div>
@@ -256,7 +377,7 @@ function SettingsPage() {
 
   const handlePasswordModalClose = (success) => {
     setShowChangePassword(false);
-    if (success) showToast('success', 'Password updated successfully!');
+    if (success) showToast("success", "Password updated successfully!");
   };
 
   useEffect(() => {
@@ -296,17 +417,24 @@ function SettingsPage() {
   return (
     <div className="min-h-screen bg-[#0a0d14] flex flex-col">
       <Navbar />
-      {showChangePassword && <ChangePasswordModal userEmail={profile?.email || user?.email || ''} onClose={handlePasswordModalClose} />}
+      {showChangePassword && (
+        <ChangePasswordModal
+          userEmail={profile?.email || user?.email || ""}
+          onClose={handlePasswordModalClose}
+        />
+      )}
 
       {/* Toast Notification */}
       {toast && (
-        <div className={`fixed top-20 right-4 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl text-sm font-medium animate-[slideUp_0.3s_ease-out] ${
-          toast.type === 'success'
-            ? 'bg-[#22c55e]/10 border border-[#22c55e]/30 text-[#22c55e]'
-            : 'bg-red-500/10 border border-red-500/20 text-red-400'
-        }`}>
+        <div
+          className={`fixed top-20 right-4 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl text-sm font-medium animate-[slideUp_0.3s_ease-out] ${
+            toast.type === "success"
+              ? "bg-[#22c55e]/10 border border-[#22c55e]/30 text-[#22c55e]"
+              : "bg-red-500/10 border border-red-500/20 text-red-400"
+          }`}
+        >
           <span className="material-symbols-rounded text-[18px]">
-            {toast.type === 'success' ? 'check_circle' : 'error'}
+            {toast.type === "success" ? "check_circle" : "error"}
           </span>
           {toast.message}
         </div>
