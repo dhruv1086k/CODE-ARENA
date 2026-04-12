@@ -624,18 +624,6 @@ function LoginPage() {
             </p>
           </div>
         </section>
-
-        <nav className="mt-6 flex justify-center gap-6 text-xs text-gray-600">
-          <a href="#" className="hover:text-gray-400 transition-colors">
-            Privacy Policy
-          </a>
-          <a href="#" className="hover:text-gray-400 transition-colors">
-            Terms of Service
-          </a>
-          <a href="#" className="hover:text-gray-400 transition-colors">
-            Contact Support
-          </a>
-        </nav>
       </main>
     </div>
   );
