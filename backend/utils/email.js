@@ -1,38 +1,21 @@
-import nodemailer from 'nodemailer'
-
-function getTransporter() {
-  const user = process.env.SMTP_USER
-  const pass = process.env.SMTP_PASS
-  const host = process.env.SMTP_HOST || 'smtp.gmail.com'
-  const port = Number(process.env.SMTP_PORT) || 465
-  const secure = port === 465
-
-  if (!user || !pass) {
-    console.error('[email] SMTP env vars missing — SMTP_USER:', user ? 'SET' : 'MISSING', '| SMTP_PASS:', pass ? 'SET' : 'MISSING')
-    throw new Error('SMTP_USER and SMTP_PASS must be set in environment variables')
-  }
-
-  console.log(`[email] Creating transporter — host:${host} port:${port} secure:${secure} user:${user}`)
-
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,       // true only for port 465 (SSL)
-    requireTLS: port === 587,   // enforce STARTTLS for port 587
-    auth: { user, pass },
-    family: 4,                  // force IPv4 — Render blocks IPv6 SMTP
-  })
-}
+import { Resend } from 'resend'
 
 /**
  * Sends a 6-digit OTP email for the given flow type.
+ * Uses Resend HTTP API (port 443) — Render blocks all outbound SMTP ports.
  * @param {string} to      - Recipient email
  * @param {string} otp     - Plain-text 6-digit OTP
  * @param {'forgot_password'|'change_password'} type
  */
 export async function sendOtpEmail(to, otp, type) {
-  const t = getTransporter()
-  const from = process.env.SMTP_FROM || `"CodeArena" <${process.env.SMTP_USER}>`
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) {
+    console.error('[email] RESEND_API_KEY is not set in environment variables')
+    throw new Error('RESEND_API_KEY must be set in environment variables')
+  }
+
+  const resend = new Resend(apiKey)
+  const from = process.env.EMAIL_FROM || 'CodeArena <noreply@codearena.diy>'
 
   const subjects = {
     forgot_password: 'Reset your CodeArena password',
@@ -106,15 +89,21 @@ export async function sendOtpEmail(to, otp, type) {
 </html>`
 
   try {
-    await t.sendMail({
+    const { data, error } = await resend.emails.send({
       from,
       to,
       subject: subjects[type],
       html,
     })
-    console.log(`[email] OTP email sent to ${to} (type: ${type})`)
+
+    if (error) {
+      console.error(`[email] Resend error sending to ${to}:`, error)
+      throw new Error(error.message)
+    }
+
+    console.log(`[email] OTP email sent to ${to} (type: ${type}) — id: ${data?.id}`)
   } catch (err) {
-    console.error(`[email] Failed to send OTP email to ${to}:`, err.message, err.code, err.response)
+    console.error(`[email] Failed to send OTP email to ${to}:`, err.message)
     throw err
   }
 }
