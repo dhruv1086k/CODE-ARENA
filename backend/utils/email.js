@@ -1,28 +1,25 @@
 import nodemailer from 'nodemailer'
 
-let transporter = null
-
 function getTransporter() {
-    if (transporter) return transporter
+  const user = process.env.SMTP_USER
+  const pass = process.env.SMTP_PASS
+  const host = process.env.SMTP_HOST || 'smtp.gmail.com'
+  const port = Number(process.env.SMTP_PORT) || 465
+  const secure = port === 465
 
-    const user = process.env.SMTP_USER
-    const pass = process.env.SMTP_PASS
-    const host = process.env.SMTP_HOST || 'smtp.gmail.com'
-    const port = Number(process.env.SMTP_PORT) || 465
-    const secure = port === 465
+  if (!user || !pass) {
+    console.error('[email] SMTP env vars missing — SMTP_USER:', user ? 'SET' : 'MISSING', '| SMTP_PASS:', pass ? 'SET' : 'MISSING')
+    throw new Error('SMTP_USER and SMTP_PASS must be set in environment variables')
+  }
 
-    if (!user || !pass) {
-        throw new Error('SMTP_USER and SMTP_PASS must be set in environment variables')
-    }
+  console.log(`[email] Creating transporter — host:${host} port:${port} secure:${secure} user:${user}`)
 
-    transporter = nodemailer.createTransport({
-        host,
-        port,
-        secure,
-        auth: { user, pass },
-    })
-
-    return transporter
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure,
+    auth: { user, pass },
+  })
 }
 
 /**
@@ -32,25 +29,25 @@ function getTransporter() {
  * @param {'forgot_password'|'change_password'} type
  */
 export async function sendOtpEmail(to, otp, type) {
-    const t = getTransporter()
-    const from = process.env.SMTP_FROM || `"CodeArena" <${process.env.SMTP_USER}>`
+  const t = getTransporter()
+  const from = process.env.SMTP_FROM || `"CodeArena" <${process.env.SMTP_USER}>`
 
-    const subjects = {
-        forgot_password: 'Reset your CodeArena password',
-        change_password: 'CodeArena – confirm your password change',
-    }
+  const subjects = {
+    forgot_password: 'Reset your CodeArena password',
+    change_password: 'CodeArena – confirm your password change',
+  }
 
-    const headings = {
-        forgot_password: 'Password Reset',
-        change_password: 'Confirm Password Change',
-    }
+  const headings = {
+    forgot_password: 'Password Reset',
+    change_password: 'Confirm Password Change',
+  }
 
-    const messages = {
-        forgot_password: 'You requested a password reset. Use the OTP below to create a new password. It expires in <strong>10 minutes</strong>.',
-        change_password: 'Someone (hopefully you!) requested to change your CodeArena password. Use the OTP below to confirm. It expires in <strong>10 minutes</strong>.',
-    }
+  const messages = {
+    forgot_password: 'You requested a password reset. Use the OTP below to create a new password. It expires in <strong>10 minutes</strong>.',
+    change_password: 'Someone (hopefully you!) requested to change your CodeArena password. Use the OTP below to confirm. It expires in <strong>10 minutes</strong>.',
+  }
 
-    const html = `
+  const html = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -106,10 +103,16 @@ export async function sendOtpEmail(to, otp, type) {
 </body>
 </html>`
 
+  try {
     await t.sendMail({
-        from,
-        to,
-        subject: subjects[type],
-        html,
+      from,
+      to,
+      subject: subjects[type],
+      html,
     })
+    console.log(`[email] OTP email sent to ${to} (type: ${type})`)
+  } catch (err) {
+    console.error(`[email] Failed to send OTP email to ${to}:`, err.message, err.code, err.response)
+    throw err
+  }
 }
