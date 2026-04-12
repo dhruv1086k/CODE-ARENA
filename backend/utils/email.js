@@ -19,6 +19,7 @@ function getTransporter() {
     port,
     secure,
     auth: { user, pass },
+    family: 4,
   })
 }
 
