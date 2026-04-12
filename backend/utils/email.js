@@ -17,9 +17,10 @@ function getTransporter() {
   return nodemailer.createTransport({
     host,
     port,
-    secure,
+    secure: port === 465,       // true only for port 465 (SSL)
+    requireTLS: port === 587,   // enforce STARTTLS for port 587
     auth: { user, pass },
-    family: 4,
+    family: 4,                  // force IPv4 — Render blocks IPv6 SMTP
   })
 }
 
