@@ -239,9 +239,6 @@ function ForgotPasswordModal({ onClose }) {
                 Enter your registered email address and we'll send you a 6-digit
                 OTP.
               </p>
-              <p className="text-green-500 text-xs">
-                OTP sent! Check inbox or spam folder.
-              </p>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                   Email Address
@@ -279,6 +276,9 @@ function ForgotPasswordModal({ onClose }) {
                 We sent a 6-digit code to{" "}
                 <span className="text-white font-medium">{email}</span>. Enter
                 it below.
+              </p>
+              <p className="text-green-500 text-xs">
+                OTP sent! Check inbox or spam folder.
               </p>
               <OtpInput value={otp} onChange={setOtp} disabled={loading} />
               <button
