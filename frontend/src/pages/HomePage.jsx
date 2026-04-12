@@ -463,68 +463,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── STATS ── */}
-      <section className="py-24 px-6">
-        <div className="max-w-5xl mx-auto">
-          <div className="bg-[#0d1117] border border-[#1f2937] rounded-2xl p-10 grid grid-cols-2 lg:grid-cols-4 gap-8 text-center relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-[#22c55e]/5 via-transparent to-[#06b6d4]/5 pointer-events-none" />
-            {[
-              { val: 500, suffix: '+', label: 'Coding Sessions Tracked' },
-              { val: 50, suffix: '+', label: 'Active Developers' },
-              { val: 90, suffix: ' days', label: 'Activity History' },
-              { val: 99, suffix: '.9%', label: 'API Uptime' },
-            ].map(s => (
-              <div key={s.label} className="relative">
-                <p className="text-4xl font-black font-mono text-[#22c55e] mb-2">
-                  <AnimCounter target={s.val} suffix={s.suffix} />
-                </p>
-                <p className="text-gray-500 text-sm">{s.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── WHY THIS EXISTS ── */}
-      <section className="py-24 px-6 bg-[#090e18]">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div>
-              <p className="text-xs font-mono text-[#22c55e] tracking-[0.3em] uppercase mb-4">&gt;_ why_codearena_exists</p>
-              <h2 className="text-3xl sm:text-4xl font-black mb-6 leading-snug">
-                Built by a developer who was tired of not knowing
-                <span className="text-[#22c55e]"> if they were actually improving.</span>
-              </h2>
-              <div className="space-y-5 text-gray-400 text-[15px] leading-relaxed">
-                <p>
-                  Most productivity apps are designed for managers, not developers. They're bloated, distracting, and totally miss what actually matters to a coder — consistent deep work.
-                </p>
-                <p>
-                  CodeArena was built as a backend engineering challenge: design a full REST API from scratch — auth, rate limiting, Redis caching, Swagger docs, OTP email flows — then wrap it in a frontend that actually gets used.
-                </p>
-                <p className="text-white font-medium">
-                  The result is a tool that developers actually want to open every day. Clean. Fast. Data-first.
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { icon: 'security', title: 'JWT + OTP Auth', desc: 'Refresh tokens, bcrypt hashing, email OTP for password resets', color: 'text-[#22c55e]' },
-                { icon: 'speed', title: 'Redis Caching', desc: 'Streak, stats, and heatmap endpoints cached for fast loads', color: 'text-[#06b6d4]' },
-                { icon: 'api', title: 'Swagger Docs', desc: 'Full OpenAPI 3.0 documentation for every endpoint', color: 'text-[#a855f7]' },
-                { icon: 'shield', title: 'Rate Limited', desc: 'Express rate-limiter on auth routes prevents brute force', color: 'text-[#f59e0b]' },
-              ].map(t => (
-                <div key={t.title} className="bg-[#040812] border border-[#1f2937] rounded-xl p-4 hover:border-[#374151] transition-all">
-                  <span className={`material-symbols-rounded text-[20px] ${t.color} mb-2 block`}>{t.icon}</span>
-                  <p className="text-white font-semibold text-sm mb-1">{t.title}</p>
-                  <p className="text-gray-600 text-xs leading-relaxed">{t.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ── FINAL CTA ── */}
       <section className="py-32 px-6 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#22c55e]/5 to-transparent pointer-events-none" />
