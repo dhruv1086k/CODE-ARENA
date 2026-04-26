@@ -57,6 +57,36 @@ function SessionRow({ session, index }) {
   );
 }
 
+// Mobile card view for a session
+function SessionCard({ session, index }) {
+  return (
+    <div
+      className="bg-[#111827] border border-[#1f2937] rounded-xl p-4 animate-[fadeIn_0.3s_ease-out]"
+      style={{ animationDelay: `${index * 30}ms`, animationFillMode: 'both' }}
+    >
+      <div className="flex items-start justify-between gap-3 mb-2">
+        <div>
+          <p className="text-sm font-semibold text-white">
+            {formatDate(session.sessionDate || session.startTime)}
+          </p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            {formatTime(session.startTime)} – {formatTime(session.endTime)}
+          </p>
+        </div>
+        <div className="flex items-center gap-1.5 bg-[#22c55e]/10 border border-[#22c55e]/20 rounded-lg px-2.5 py-1 flex-shrink-0">
+          <div className="w-1.5 h-1.5 rounded-full bg-[#22c55e]" />
+          <span className="text-xs font-bold text-[#22c55e]">{formatDuration(session.duration)}</span>
+        </div>
+      </div>
+      {session.topicTag && (
+        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-[#22c55e]/10 text-[#22c55e] border border-[#22c55e]/20">
+          {session.topicTag}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function StudyHistoryPage() {
   const [date, setDate] = useState('');
   const [topic, setTopic] = useState('');
@@ -167,8 +197,8 @@ function StudyHistoryPage() {
           </div>
         </form>
 
-        {/* Table */}
-        <div className="bg-[#111827] border border-[#1f2937] rounded-2xl overflow-hidden shadow-2xl">
+        {/* Table — md and above */}
+        <div className="hidden md:block bg-[#111827] border border-[#1f2937] rounded-2xl overflow-hidden shadow-2xl">
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
@@ -231,6 +261,63 @@ function StudyHistoryPage() {
                   onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
                   disabled={page >= pagination.totalPages}
                   className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#1f2937] hover:bg-[#374151] text-gray-300 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                >
+                  Next
+                  <span className="material-symbols-rounded text-[16px]">chevron_right</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Card list — mobile only (below md) */}
+        <div className="md:hidden">
+          {loading && (
+            <div className="flex justify-center py-16">
+              <div className="text-center">
+                <svg className="animate-spin h-7 w-7 text-[#22c55e] mx-auto mb-2" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                <p className="text-sm text-gray-500">Loading sessions...</p>
+              </div>
+            </div>
+          )}
+          {!loading && sessions.length === 0 && (
+            <div className="text-center py-16">
+              <span className="material-symbols-rounded text-[40px] text-gray-600 block mb-2">history</span>
+              <p className="text-gray-400 font-medium text-sm">No sessions found</p>
+              <p className="text-gray-600 text-xs mt-1">Start a session on the Dashboard.</p>
+            </div>
+          )}
+          {!loading && sessions.length > 0 && (
+            <div className="space-y-3">
+              {sessions.map((s, i) => (
+                <SessionCard key={s._id} session={s} index={i} />
+              ))}
+            </div>
+          )}
+          {/* Mobile Pagination */}
+          {!loading && pagination.totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4">
+              <p className="text-xs text-gray-500">
+                Page {pagination.page} / {pagination.totalPages}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#1f2937] hover:bg-[#374151] text-gray-300 disabled:opacity-40 transition-all"
+                >
+                  <span className="material-symbols-rounded text-[16px]">chevron_left</span>
+                  Prev
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
+                  disabled={page >= pagination.totalPages}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-[#1f2937] hover:bg-[#374151] text-gray-300 disabled:opacity-40 transition-all"
                 >
                   Next
                   <span className="material-symbols-rounded text-[16px]">chevron_right</span>

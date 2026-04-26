@@ -8,6 +8,7 @@ export function AuthProvider({ children }) {
   const [accessToken, setAccessToken] = useState(localStorage.getItem('accessToken') || '');
   const [loading, setLoading] = useState(false);
 
+  // Load the user profile on mount / when accessToken changes
   useEffect(() => {
     if (!accessToken) return;
 
@@ -16,11 +17,26 @@ export function AuthProvider({ children }) {
         setUser(res?.data || res?.user || res);
       })
       .catch(() => {
+        // If even the refresh-retry failed, the client dispatches auth:logout
+        // which is handled below — we just clear state here too as a safety net
         setUser(null);
         setAccessToken('');
         localStorage.removeItem('accessToken');
       });
   }, [accessToken]);
+
+  // Listen for forced logout events dispatched by the API client when
+  // the refresh token has also expired (true session end)
+  useEffect(() => {
+    const handleForceLogout = () => {
+      setUser(null);
+      setAccessToken('');
+      localStorage.removeItem('accessToken');
+    };
+
+    window.addEventListener('auth:logout', handleForceLogout);
+    return () => window.removeEventListener('auth:logout', handleForceLogout);
+  }, []);
 
   const login = async (email, password) => {
     setLoading(true);
@@ -93,4 +109,3 @@ export function useAuth() {
   }
   return ctx;
 }
-

@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
   <!-- ── Primary SEO ─────────────────────────────────────────────── -->
   <title>CodeArena — Track Your Coding Consistency &amp; Build Streaks</title>
@@ -162,6 +162,8 @@
       margin: 0;
       -webkit-font-smoothing: antialiased;
       transition: background-color 0.25s ease, color 0.2s ease;
+      /* Prevent unwanted horizontal overflow on mobile */
+      overflow-x: hidden;
     }
 
     #root {
@@ -430,6 +432,14 @@
     [data-theme="light"] nav {
       background-color: rgba(255, 255, 255, 0.9) !important;
       border-bottom-color: var(--ct-border) !important;
+    }
+
+    /* ── Mobile safe area (iPhone home bar) ─────────────────── */
+    /* The fixed bottom-nav needs extra bottom padding on phones with notch */
+    @supports (padding-bottom: env(safe-area-inset-bottom)) {
+      .mobile-bottom-nav {
+        padding-bottom: env(safe-area-inset-bottom);
+      }
     }
   </style>
 </head>

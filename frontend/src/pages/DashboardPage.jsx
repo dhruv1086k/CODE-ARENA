@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { apiFetch } from '../api/client';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Navbar } from '../components/Navbar.jsx';
@@ -12,16 +12,16 @@ function StatCard({ icon, label, value, unit, color = 'green' }) {
     purple: 'text-purple-400 bg-purple-400/10',
   };
   return (
-    <div className="bg-[#111827] border border-[#1f2937] rounded-2xl p-5 hover:border-[#374151] transition-all duration-200 group">
-      <div className="flex items-start justify-between mb-4">
-        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${colorMap[color]}`}>
-          <span className="material-symbols-rounded text-[20px]">{icon}</span>
-        </div>
+    <div className="bg-[#111827] border border-[#1f2937] rounded-xl px-3 py-2.5 hover:border-[#374151] transition-all duration-200 flex items-center gap-3">
+      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${colorMap[color]}`}>
+        <span className="material-symbols-rounded text-[18px]">{icon}</span>
       </div>
-      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{label}</p>
-      <div className="flex items-baseline gap-1.5">
-        <span className="text-3xl font-bold text-white">{value}</span>
-        {unit && <span className="text-sm text-gray-500">{unit}</span>}
+      <div className="min-w-0">
+        <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider leading-none mb-0.5">{label}</p>
+        <div className="flex items-baseline gap-1">
+          <span className="text-xl font-bold text-white">{value}</span>
+          {unit && <span className="text-[11px] text-gray-500">{unit}</span>}
+        </div>
       </div>
     </div>
   );
@@ -146,7 +146,7 @@ function HeatmapGrid({ data }) {
                             {cell.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                           </span>
                           <span className="text-gray-400 ml-1">
-                            — {cell.count} session{cell.count !== 1 ? 's' : ''}
+                            â€” {cell.count} session{cell.count !== 1 ? 's' : ''}
                           </span>
                         </div>
                       </div>
@@ -184,6 +184,244 @@ function loadSession() {
     const raw = localStorage.getItem(SESSION_KEY);
     return raw ? JSON.parse(raw) : null;
   } catch { return null; }
+}
+
+// â”€â”€ Palette for topic slices â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const SLICE_COLORS = [
+  '#22c55e', '#06b6d4', '#a855f7', '#f59e0b',
+  '#3b82f6', '#ec4899', '#ef4444', '#14b8a6',
+];
+
+function formatDur(seconds) {
+  const s = Number(seconds) || 0;
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m`;
+  return `${s}s`;
+}
+// -- Weekly Bar Chart Panel --------------------------------------------------
+function WeeklyBarPanel({ refreshKey }) {
+  const navigate = useNavigate();
+  const [bars, setBars] = useState([]);
+  const [maxHours, setMaxHours] = useState(1);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      try {
+        const days = [];
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date();
+          d.setDate(d.getDate() - i);
+          const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          days.push({ iso, label: d.toLocaleDateString('en-US', { weekday: 'short' }), isToday: i === 0 });
+        }
+        const results = await Promise.all(
+          days.map((d) =>
+            apiFetch(`/api/v1/study-session/stats?date=${d.iso}`, { auth: true }).catch(() => ({ totalStudyTime: 0 }))
+          )
+        );
+        if (cancelled) return;
+        const barsData = days.map((d, i) => {
+          const sd = results[i]?.data ?? results[i];
+          return { ...d, hours: Number(sd?.totalStudyTime ?? 0) / 3600 };
+        });
+        setBars(barsData);
+        setMaxHours(Math.max(...barsData.map((b) => b.hours), 0.5));
+      } catch { /* silent */ } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [refreshKey]);
+
+  const weekTotal = bars.reduce((s, b) => s + b.hours * 3600, 0);
+
+  return (
+    <section className="bg-[#111827] border border-[#1f2937] rounded-2xl p-4 flex flex-col h-full overflow-hidden">
+      <div className="flex items-center justify-between mb-2.5 flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-rounded text-[20px] text-[#22c55e]">bar_chart</span>
+          <h2 className="text-sm font-semibold text-white">This Week</h2>
+        </div>
+        <button onClick={() => navigate('/history')} className="flex items-center gap-1 text-[11px] text-gray-500 hover:text-[#22c55e] transition-colors">
+          Full history <span className="material-symbols-rounded text-[14px]">arrow_forward</span>
+        </button>
+      </div>
+      {loading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <svg className="animate-spin h-5 w-5 text-[#22c55e]" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+        </div>
+      ) : (
+        <div className="flex-1 min-h-0 flex flex-col">
+          <div className="flex-1 min-h-0 flex items-end gap-1.5 px-1">
+            {bars.map((bar) => {
+              const heightPct = bar.hours > 0 ? Math.max((bar.hours / maxHours) * 100, 6) : 2;
+              return (
+                <div key={bar.iso} className="flex-1 flex flex-col items-center justify-end h-full relative group">
+                  {bar.hours > 0 && (
+                    <div className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 hidden group-hover:block z-20 pointer-events-none">
+                      <div className="bg-[#1f2937] border border-[#374151] text-[11px] text-white rounded-lg px-2 py-1 whitespace-nowrap shadow-xl">
+                        {bar.hours.toFixed(1)}h
+                      </div>
+                    </div>
+                  )}
+                  <div
+                    className="w-full rounded-t-md transition-all duration-700 ease-out"
+                    style={{
+                      height: `${heightPct}%`,
+                      background: bar.hours === 0
+                        ? '#1f2937'
+                        : bar.isToday
+                          ? 'linear-gradient(to top, #16a34a, #22c55e)'
+                          : 'linear-gradient(to top, #14532d, #22c55e80)',
+                      boxShadow: bar.isToday && bar.hours > 0 ? '0 0 10px #22c55e50' : undefined,
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex gap-1.5 px-1 mt-1.5 flex-shrink-0">
+            {bars.map((bar) => (
+              <div key={bar.iso} className={`flex-1 text-center text-[10px] font-semibold ${bar.isToday ? 'text-[#22c55e]' : 'text-gray-600'}`}>
+                {bar.label}
+              </div>
+            ))}
+          </div>
+          <div className="mt-2 pt-2 border-t border-[#1f2937] flex items-center justify-between flex-shrink-0">
+            <span className="text-[11px] text-gray-500">Week total</span>
+            <span className="text-sm font-bold text-[#22c55e]">{formatDur(weekTotal)}</span>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
+// â”€â”€ Task Preview Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+function TaskPreviewPanel({ refreshKey }) {
+  const navigate = useNavigate();
+  const [todos, setTodos] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadTodos = async () => {
+    try {
+      const res = await apiFetch('/api/v1/todos?completed=false&page=1&limit=6', { auth: true });
+      const data = res?.data || res;
+      setTodos(data?.todos || data?.data?.todos || []);
+    } catch { /* silent */ } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { loadTodos(); }, [refreshKey]);
+
+  const handleToggle = async (todo) => {
+    try {
+      await apiFetch(`/api/v1/todos/${todo._id}/toggle`, { method: 'PATCH', auth: true });
+      setTodos((prev) => prev.filter((t) => t._id !== todo._id));
+    } catch { /* silent */ }
+  };
+
+  return (
+    <section className="bg-[#111827] border border-[#1f2937] rounded-2xl p-4 flex flex-col h-full overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-2.5 flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-rounded text-[20px] text-[#22c55e]">checklist</span>
+          <h2 className="text-sm font-semibold text-white">Active Tasks</h2>
+          {todos.length > 0 && (
+            <span className="text-[10px] font-bold bg-[#22c55e]/10 text-[#22c55e] border border-[#22c55e]/20 px-1.5 py-0.5 rounded-md">
+              {todos.length}
+            </span>
+          )}
+        </div>
+        <button
+          onClick={() => navigate('/todos')}
+          className="flex items-center gap-1 text-[11px] text-gray-500 hover:text-[#22c55e] transition-colors"
+        >
+          Manage all
+          <span className="material-symbols-rounded text-[14px]">arrow_forward</span>
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="flex-1 flex items-center justify-center">
+          <svg className="animate-spin h-5 w-5 text-[#22c55e]" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+        </div>
+      ) : todos.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-2">
+          <div className="w-10 h-10 rounded-xl bg-[#0a0d14] border border-[#1f2937] flex items-center justify-center">
+            <span className="material-symbols-rounded text-[22px] text-gray-600">task_alt</span>
+          </div>
+          <p className="text-[11px] text-gray-500 text-center">All caught up! No pending tasks.</p>
+          <button
+            onClick={() => navigate('/todos')}
+            className="text-[11px] text-[#22c55e] hover:text-green-400 transition-colors font-medium"
+          >
+            + Add a task
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className="space-y-1.5 flex-1 min-h-0 overflow-y-auto">
+            {todos.map((todo, i) => (
+              <div
+                key={todo._id}
+                className="group flex items-start gap-3 p-2.5 rounded-xl hover:bg-[#0a0d14] transition-all duration-150 border border-transparent hover:border-[#1f2937]"
+                style={{ animationDelay: `${i * 40}ms` }}
+              >
+                {/* Custom checkbox */}
+                <button
+                  type="button"
+                  onClick={() => handleToggle(todo)}
+                  title="Mark complete"
+                  className="mt-0.5 flex-shrink-0 w-4.5 h-4.5 rounded border-2 border-[#374151] hover:border-[#22c55e] transition-colors flex items-center justify-center group-hover:border-[#22c55e]/60"
+                  style={{ width: '18px', height: '18px' }}
+                >
+                  <span className="material-symbols-rounded text-[12px] text-transparent group-hover:text-[#22c55e]/40 transition-colors">check</span>
+                </button>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-200 font-medium leading-snug truncate">{todo.topicTag}</p>
+                  {todo.description && (
+                    <p className="text-[11px] text-gray-600 mt-0.5 line-clamp-1">{todo.description}</p>
+                  )}
+                </div>
+                {/* Priority dot â€” animate on hover */}
+                <div
+                  className="flex-shrink-0 w-1.5 h-1.5 rounded-full mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                  style={{ background: SLICE_COLORS[i % SLICE_COLORS.length] }}
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* Footer */}
+          <div className="mt-3 pt-3 border-t border-[#1f2937] flex items-center justify-between">
+            <span className="text-[11px] text-gray-600">{todos.length} pending task{todos.length !== 1 ? 's' : ''}</span>
+            <button
+              onClick={() => navigate('/todos')}
+              className="text-[11px] font-semibold text-[#22c55e] hover:text-green-400 transition-colors flex items-center gap-1"
+            >
+              View all
+              <span className="material-symbols-rounded text-[13px]">open_in_new</span>
+            </button>
+          </div>
+        </>
+      )}
+    </section>
+  );
 }
 
 // SessionTimer receives the actual UTC ms startTime so elapsed survives page refreshes
@@ -310,146 +548,144 @@ function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0d14] flex flex-col">
+    <div className="h-screen overflow-hidden bg-[#0a0d14] flex flex-col">
       <Navbar />
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 pb-24 md:pb-8 animate-[fadeIn_0.3s_ease-out]">
-        {/* Header */}
-        <div className="mb-8">
-          <p className="text-sm text-gray-500 mb-1">{greeting()}, {user?.name?.split(' ')[0] || 'Developer'} 👋</p>
-          <h1 className="text-2xl font-bold text-white">Your Dashboard</h1>
+      <main className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 pb-4 flex flex-col gap-3 animate-[fadeIn_0.3s_ease-out]">
+
+        {/* â”€â”€ Greeting â”€â”€ */}
+        <div className="flex-shrink-0">
+          <p className="text-xs text-gray-500">{greeting()}, {user?.name?.split(' ')[0] || 'Developer'}</p>
+          <h1 className="text-xl font-bold text-white leading-tight">Your Dashboard</h1>
         </div>
 
-        {/* Stats Grid */}
-        <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <StatCard icon="schedule" label="Today Study Time" value={totalHours.toFixed(1)} unit="hours" color="green" />
-          <StatCard icon="check_circle" label="Today Sessions" value={stats.totalSessions} unit="sessions" color="blue" />
-          <StatCard icon="local_fire_department" label="Current Streak" value={streak.currentStreak} unit="days" color="orange" />
-          <StatCard icon="emoji_events" label="Longest Streak" value={streak.longestStreak} unit="days" color="purple" />
+        {/* â”€â”€ Stats row â”€â”€ */}
+        <section className="flex-shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-2">
+          <StatCard icon="schedule"            label="Today Study"    value={totalHours.toFixed(1)}    unit="hrs"   color="green"  />
+          <StatCard icon="check_circle"        label="Sessions"       value={stats.totalSessions}      unit="today" color="blue"   />
+          <StatCard icon="local_fire_department" label="Current Streak" value={streak.currentStreak}  unit="days"  color="orange" />
+          <StatCard icon="emoji_events"        label="Longest Streak" value={streak.longestStreak}     unit="days"  color="purple" />
         </section>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Activity Heatmap */}
-          <section className="lg:col-span-2 bg-[#111827] border border-[#1f2937] rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-base font-semibold text-white">Activity</h2>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  {heatmap.reduce((s, d) => s + d.count, 0)} sessions in the last 90 days
-                </p>
-              </div>
-              <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                <span className="material-symbols-rounded text-[16px]">calendar_today</span>
-                Last 90 days
-              </div>
-            </div>
-            <HeatmapGrid data={heatmap} />
-          </section>
+        {/* â”€â”€ Main grid: unified 3-column layout â”€â”€
+              LEFT  (col-span-2): Heatmap stacked above Donut chart
+              RIGHT (col-span-1): Session panel stacked above Task list          â”€â”€ */}
+        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-3">
 
-          {/* Study Session Panel */}
-          <aside className="bg-[#111827] border border-[#1f2937] rounded-2xl p-6 flex flex-col">
-            <div className="flex items-center gap-2 mb-6">
-              <div className={`w-2.5 h-2.5 rounded-full ${sessionActive ? 'bg-[#22c55e] animate-pulse' : 'bg-gray-600'}`} />
-              <h2 className="text-base font-semibold text-white">
-                {sessionActive ? 'Session Active' : 'Start Session'}
-              </h2>
-            </div>
+          {/* LEFT COLUMN */}
+          <div className="lg:col-span-2 flex flex-col gap-3 min-h-0">
 
-            <SessionTimer isActive={sessionActive} startTime={sessionData?.startTime} />
-
-            {!sessionActive && (
-              <div className="space-y-3 mb-6">
+            {/* Heatmap â€” grows to fill top of left column */}
+            <section className="flex-1 min-h-0 bg-[#111827] border border-[#1f2937] rounded-2xl p-4 flex flex-col">
+              <div className="flex items-center justify-between mb-3 flex-shrink-0">
                 <div>
-                  <label htmlFor="topic-input" className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                    What are you working on?
-                  </label>
-                  <input
-                    id="topic-input"
-                    type="text"
-                    value={topicTag}
-                    onChange={(e) => setTopicTag(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && !sessionActive && handleToggleSession()}
-                    className="w-full bg-[#0a0d14] border border-[#1f2937] rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e]/40 transition-all"
-                    placeholder="e.g. React Hooks, System Design"
-                  />
+                  <h2 className="text-sm font-semibold text-white">Activity</h2>
+                  <p className="text-[11px] text-gray-500 mt-0.5">
+                    {heatmap.reduce((s, d) => s + d.count, 0)} sessions in the last 90 days
+                  </p>
                 </div>
-                <p className="text-xs text-gray-600">
-                  Track your focus time and stay consistent. Select a topic and hit start.
-                </p>
+                <div className="flex items-center gap-1.5 text-[11px] text-gray-600">
+                  <span className="material-symbols-rounded text-[15px]">calendar_today</span>
+                  Last 90 days
+                </div>
               </div>
-            )}
+              <div className="flex-1 min-h-0 overflow-hidden">
+                <HeatmapGrid data={heatmap} />
+              </div>
+            </section>
 
-            {sessionActive && sessionData?.topicTag && (
-              <p className="text-xs text-center text-gray-500 mb-3">
-                <span className="inline-flex items-center gap-1.5 bg-[#22c55e]/10 text-[#22c55e] px-2.5 py-1 rounded-lg border border-[#22c55e]/20">
-                  <span className="material-symbols-rounded text-[14px]">tag</span>
-                  {sessionData.topicTag}
-                </span>
-              </p>
-            )}
+            {/* Donut Chart â€” fixed at bottom of left column */}
+            <div className="flex-shrink-0" style={{ height: '200px' }}>
+              <WeeklyBarPanel refreshKey={refreshKey} />
+            </div>
+          </div>
 
-            {sessionActive && <div className="flex-1" />}
+          {/* RIGHT COLUMN */}
+          <div className="flex flex-col gap-3 min-h-0">
 
-            <button
-              id="session-toggle-btn"
-              type="button"
-              onClick={handleToggleSession}
-              disabled={loadingSession}
-              className={`w-full flex items-center justify-center gap-2 rounded-xl px-4 py-3.5 font-semibold text-sm transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg mt-auto ${sessionActive
-                ? 'bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20'
-                : 'bg-[#22c55e] text-white hover:bg-[#16a34a] shadow-green-500/20 hover:shadow-green-500/30'
-                }`}
+            {/* Session Panel â€” fixed height */}
+            <aside
+              className="flex-shrink-0 bg-[#111827] border border-[#1f2937] rounded-2xl p-4 flex flex-col"
+              style={{ minHeight: '230px' }}
             >
-              {loadingSession ? (
-                <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-              ) : (
-                <>
-                  <span className="material-symbols-rounded text-[18px]">
-                    {sessionActive ? 'stop_circle' : 'play_circle'}
-                  </span>
-                  {sessionActive ? 'Stop Session' : 'Start Session'}
-                </>
+              <div className="flex items-center gap-2 mb-3 flex-shrink-0">
+                <div className={`w-2 h-2 rounded-full ${sessionActive ? 'bg-[#22c55e] animate-pulse' : 'bg-gray-600'}`} />
+                <h2 className="text-sm font-semibold text-white">
+                  {sessionActive ? 'Session Active' : 'Start Session'}
+                </h2>
+              </div>
+
+              <SessionTimer isActive={sessionActive} startTime={sessionData?.startTime} />
+
+              {!sessionActive && (
+                <div className="space-y-2 mb-3">
+                  <div>
+                    <label htmlFor="topic-input" className="block text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                      What are you working on?
+                    </label>
+                    <input
+                      id="topic-input"
+                      type="text"
+                      value={topicTag}
+                      onChange={(e) => setTopicTag(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && !sessionActive && handleToggleSession()}
+                      className="w-full bg-[#0a0d14] border border-[#1f2937] rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e]/40 transition-all"
+                      placeholder="e.g. React, System Design"
+                    />
+                  </div>
+                  <p className="text-[11px] text-gray-600">Track your focus and stay consistent.</p>
+                </div>
               )}
-            </button>
-          </aside>
+
+              {sessionActive && sessionData?.topicTag && (
+                <p className="text-xs text-center text-gray-500 mb-3">
+                  <span className="inline-flex items-center gap-1.5 bg-[#22c55e]/10 text-[#22c55e] px-2.5 py-1 rounded-lg border border-[#22c55e]/20">
+                    <span className="material-symbols-rounded text-[14px]">tag</span>
+                    {sessionData.topicTag}
+                  </span>
+                </p>
+              )}
+
+              {sessionActive && <div className="flex-1" />}
+
+              <button
+                id="session-toggle-btn"
+                type="button"
+                onClick={handleToggleSession}
+                disabled={loadingSession}
+                className={`w-full flex items-center justify-center gap-2 rounded-xl px-4 py-3 font-semibold text-sm transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg mt-auto flex-shrink-0 ${
+                  sessionActive
+                    ? 'bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20'
+                    : 'bg-[#22c55e] text-white hover:bg-[#16a34a] shadow-green-500/20 hover:shadow-green-500/30'
+                }`}
+              >
+                {loadingSession ? (
+                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                ) : (
+                  <>
+                    <span className="material-symbols-rounded text-[18px]">
+                      {sessionActive ? 'stop_circle' : 'play_circle'}
+                    </span>
+                    {sessionActive ? 'Stop Session' : 'Start Session'}
+                  </>
+                )}
+              </button>
+            </aside>
+
+            {/* Task List â€” fills the rest of the right column */}
+            <div className="flex-1 min-h-0">
+              <TaskPreviewPanel refreshKey={refreshKey} />
+            </div>
+          </div>
+
         </div>
-
-        {/* Quick navigation cards */}
-        <section className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <button
-            onClick={() => navigate('/history')}
-            className="bg-[#111827] border border-[#1f2937] rounded-2xl p-5 text-left hover:border-[#22c55e]/30 hover:bg-[#22c55e]/5 transition-all duration-200 group"
-          >
-            <div className="flex items-center gap-3 mb-2">
-              <span className="material-symbols-rounded text-[22px] text-[#22c55e]">history</span>
-              <span className="font-semibold text-white">Study History</span>
-            </div>
-            <p className="text-sm text-gray-500 group-hover:text-gray-400 transition-colors">
-              Review and analyze your previous coding sessions.
-            </p>
-          </button>
-          <button
-            onClick={() => navigate('/todos')}
-            className="bg-[#111827] border border-[#1f2937] rounded-2xl p-5 text-left hover:border-[#22c55e]/30 hover:bg-[#22c55e]/5 transition-all duration-200 group"
-          >
-            <div className="flex items-center gap-3 mb-2">
-              <span className="material-symbols-rounded text-[22px] text-[#22c55e]">checklist</span>
-              <span className="font-semibold text-white">Task Management</span>
-            </div>
-            <p className="text-sm text-gray-500 group-hover:text-gray-400 transition-colors">
-              Manage your development roadmap and sprints.
-            </p>
-          </button>
-        </section>
       </main>
-
-      <footer className="text-center text-xs text-gray-700 py-4 border-t border-[#111827]">
-        © {new Date().getFullYear()} CodeArena — Build with focus. Stay consistent.
-      </footer>
     </div>
   );
 }
 
 export default DashboardPage;
+
+

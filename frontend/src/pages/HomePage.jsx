@@ -190,7 +190,7 @@ export default function HomePage() {
 
       {/* ── Sticky Navbar ── */}
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-[#040812]/95 backdrop-blur-md border-b border-[#1f2937]' : 'bg-transparent'}`}>
-        <nav className="max-w-7xl mx-auto px-6 lg:px-8 h-16 flex items-center justify-between">
+        <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-3">
           <Link to="/" className="flex flex-col leading-none hover:opacity-80 transition-opacity">
             <span className="text-[9px] font-bold tracking-[0.3em] text-gray-500 uppercase font-mono">Code</span>
             <span className="text-[17px] font-black tracking-tight text-[#22c55e] uppercase font-mono leading-none">Arena</span>
@@ -287,8 +287,8 @@ export default function HomePage() {
                 <span className="text-xs text-gray-600 font-mono ml-2">codearena — dashboard</span>
               </div>
               {/* Mock dashboard content */}
-              <div className="p-6">
-                <div className="grid grid-cols-4 gap-3 mb-6">
+              <div className="p-4 sm:p-6">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-6">
                   {[
                     { label: 'TODAY_STUDY_TIME', val: '3.2', unit: 'hrs', color: 'text-[#22c55e]' },
                     { label: 'TODAY_SESSIONS', val: '7', unit: 'sessions', color: 'text-[#06b6d4]' },
@@ -383,7 +383,7 @@ export default function HomePage() {
             <p className="text-xs font-mono text-[#22c55e] tracking-[0.3em] uppercase mb-3">&gt;_ how_it_works</p>
             <h2 className="text-3xl sm:text-4xl font-black">Zero setup. Start tracking<br /><span className="text-[#22c55e]">in under 60 seconds.</span></h2>
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
             <div>
               <StepCard
                 number={1} isLast={false}
@@ -415,7 +415,7 @@ export default function HomePage() {
               />
             </div>
             {/* Right side: mock live dashboard UI */}
-            <div className="sticky top-28">
+            <div className="hidden lg:block sticky top-28">
               <div className="bg-[#0d1117] border border-[#1f2937] rounded-2xl overflow-hidden shadow-2xl shadow-green-500/5">
                 {/* Titlebar */}
                 <div className="flex items-center gap-2 px-4 py-3 border-b border-[#1f2937] bg-[#090e18]">
