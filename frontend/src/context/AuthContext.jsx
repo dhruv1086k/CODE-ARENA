@@ -38,6 +38,21 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener('auth:logout', handleForceLogout);
   }, []);
 
+  // Listen for silent token refresh events dispatched by the API client.
+  // Without this, the React accessToken state stays stale after refresh,
+  // causing isAuthenticated → false and wrongly redirecting the user to /login.
+  useEffect(() => {
+    const handleTokenRefreshed = (e) => {
+      const newToken = e.detail?.accessToken;
+      if (newToken) {
+        setAccessToken(newToken);
+      }
+    };
+
+    window.addEventListener('auth:tokenRefreshed', handleTokenRefreshed);
+    return () => window.removeEventListener('auth:tokenRefreshed', handleTokenRefreshed);
+  }, []);
+
   const login = async (email, password) => {
     setLoading(true);
     try {

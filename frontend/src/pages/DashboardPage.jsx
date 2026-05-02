@@ -560,10 +560,10 @@ function DashboardPage() {
 
         {/* â”€â”€ Stats row â”€â”€ */}
         <section className="flex-shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-2">
-          <StatCard icon="schedule"            label="Today Study"    value={totalHours.toFixed(1)}    unit="hrs"   color="green"  />
-          <StatCard icon="check_circle"        label="Sessions"       value={stats.totalSessions}      unit="today" color="blue"   />
-          <StatCard icon="local_fire_department" label="Current Streak" value={streak.currentStreak}  unit="days"  color="orange" />
-          <StatCard icon="emoji_events"        label="Longest Streak" value={streak.longestStreak}     unit="days"  color="purple" />
+          <StatCard icon="schedule" label="Today Study" value={totalHours.toFixed(1)} unit="hrs" color="green" />
+          <StatCard icon="check_circle" label="Sessions" value={stats.totalSessions} unit="today" color="blue" />
+          <StatCard icon="local_fire_department" label="Current Streak" value={streak.currentStreak} unit="days" color="orange" />
+          <StatCard icon="emoji_events" label="Longest Streak" value={streak.longestStreak} unit="days" color="purple" />
         </section>
 
         {/* â”€â”€ Main grid: unified 3-column layout â”€â”€
@@ -652,11 +652,10 @@ function DashboardPage() {
                 type="button"
                 onClick={handleToggleSession}
                 disabled={loadingSession}
-                className={`w-full flex items-center justify-center gap-2 rounded-xl px-4 py-3 font-semibold text-sm transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg mt-auto flex-shrink-0 ${
-                  sessionActive
-                    ? 'bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20'
-                    : 'bg-[#22c55e] text-white hover:bg-[#16a34a] shadow-green-500/20 hover:shadow-green-500/30'
-                }`}
+                className={`w-full flex items-center justify-center gap-2 rounded-xl px-4 py-3 font-semibold text-sm transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-lg mt-auto flex-shrink-0 ${sessionActive
+                  ? 'bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20'
+                  : 'bg-[#22c55e] text-white hover:bg-[#16a34a] shadow-green-500/20 hover:shadow-green-500/30'
+                  }`}
               >
                 {loadingSession ? (
                   <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">

@@ -23,7 +23,11 @@ async function doRefresh() {
   }
   const data = await response.json()
   const newToken = data?.data?.accessToken
-  if (newToken) setAccessToken(newToken)
+  if (newToken) {
+    setAccessToken(newToken)
+    // Notify AuthContext so it can sync its React state (keeps isAuthenticated = true)
+    window.dispatchEvent(new CustomEvent('auth:tokenRefreshed', { detail: { accessToken: newToken } }))
+  }
   return newToken
 }
 
