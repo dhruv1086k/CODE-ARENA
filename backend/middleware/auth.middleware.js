@@ -20,7 +20,13 @@ export const verifyJWT = asyncHandlerWrapper(async (req, res, next) => {
         throw new ApiError(401, "Token not found")
     }
 
-    const decodeToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET_KEY)
+    // check to send 401 if token is expired or invalid otherwise decode the token 
+    let decodeToken;
+    try {
+        decodeToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET_KEY)
+    } catch (error) {
+        throw new ApiError(401, "Access token expired or invalid")
+    }
 
     const user = await User.findById(decodeToken._id).select("-password -refreshToken")
     if (!user) {
