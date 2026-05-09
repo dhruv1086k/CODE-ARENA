@@ -1,3 +1,24 @@
-*, *::before, *::after { box-sizing: border-box; }
-body { margin: 0; min-height: 100vh; }
-#root { min-height: 100vh; display: flex; flex-direction: column; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes scrollSkills {
+  0% {
+    transform: translateX(0%);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
