@@ -896,9 +896,8 @@ export default function HomePage() {
               Arena
             </span>
           </span>
-          <p className="text-xs text-gray-700 font-mono">
-            © {new Date().getFullYear()} CodeArena — Build with focus. Stay
-            consistent.
+          <p className="text-xs text-gray-700 font-mono max-sm:text-center">
+            © {new Date().getFullYear()} CodeArena — Build with focus
           </p>
           <div className="flex items-center gap-4 text-xs text-gray-600 font-mono">
             <Link to="/login" className="hover:text-gray-400 transition-colors">
