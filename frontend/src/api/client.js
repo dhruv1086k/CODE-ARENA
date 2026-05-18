@@ -31,7 +31,7 @@ async function doRefresh() {
   return newToken
 }
 
-async function refreshAccessToken() {
+export async function refreshAccessToken() {
   // If a refresh is already in-flight, wait for it instead of firing another request
   if (!refreshPromise) {
     refreshPromise = doRefresh().finally(() => { refreshPromise = null })

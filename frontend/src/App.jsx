@@ -9,13 +9,15 @@ import StudyHistoryPage from './pages/StudyHistoryPage.jsx';
 import SettingsPage from './pages/SettingsPage.jsx';
 
 function GuestRoute({ children }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, initializing } = useAuth();
+  if (initializing) return null;
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
   return children;
 }
 
 function ProtectedRoute({ children }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, initializing } = useAuth();
+  if (initializing) return null;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   return children;
 }

@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { apiFetch } from "../api/client";
+import { apiFetch, refreshAccessToken } from "../api/client";
 
 const AuthContext = createContext(null);
 
@@ -9,23 +9,42 @@ export function AuthProvider({ children }) {
     localStorage.getItem("accessToken") || "",
   );
   const [loading, setLoading] = useState(false);
+  const [initializing, setInitializing] = useState(
+    () => !!localStorage.getItem("accessToken"),
+  );
 
-  // Load the user profile on mount / when accessToken changes
+  // Restore session on mount: validate the HttpOnly refresh cookie first so we
+  // don't hit /me with a stale access token (which caused a noisy refresh 401).
   useEffect(() => {
-    if (!accessToken) return;
+    const stored = localStorage.getItem("accessToken");
+    if (!stored) {
+      setInitializing(false);
+      return;
+    }
 
-    apiFetch("/api/v1/users/me", { auth: true })
-      .then((res) => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const token = await refreshAccessToken();
+        const res = await apiFetch("/api/v1/users/me", { auth: true });
+        if (cancelled) return;
+        if (token) setAccessToken(token);
         setUser(res?.data || res?.user || res);
-      })
-      .catch(() => {
-        // If even the refresh-retry failed, the client dispatches auth:logout
-        // which is handled below — we just clear state here too as a safety net
+      } catch {
+        if (cancelled) return;
         setUser(null);
         setAccessToken("");
         localStorage.removeItem("accessToken");
-      });
-  }, [accessToken]);
+      } finally {
+        if (!cancelled) setInitializing(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Listen for forced logout events dispatched by the API client when
   // the refresh token has also expired (true session end)
@@ -111,6 +130,7 @@ export function AuthProvider({ children }) {
     user,
     accessToken,
     loading,
+    initializing,
     login,
     register,
     logout,
