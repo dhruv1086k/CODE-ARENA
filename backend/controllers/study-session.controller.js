@@ -208,7 +208,7 @@ export const getStreak = asyncHandlerWrapper(async (req, res) => {
     return res.status(200).json(new ApiResponse(200, result, "Streak fetched successfully"))
 })
 
-// ── Heatmap (last 90 days session counts per day) — CACHED ───────────────────
+// ── Heatmap (current calendar year — counts + study time per day) — CACHED ───
 export const getHeatMap = asyncHandlerWrapper(async (req, res) => {
     const userId = new mongoose.Types.ObjectId(req.user.id)
 
@@ -219,16 +219,22 @@ export const getHeatMap = asyncHandlerWrapper(async (req, res) => {
         return res.status(200).json(new ApiResponse(200, cached, "Heatmap fetched successfully (cached)"))
     }
 
-    // 90-day window
-    const since = new Date()
-    since.setDate(since.getDate() - 90)
-    since.setHours(0, 0, 0, 0)
+    const year = new Date().getFullYear()
+    const yearStart = new Date(year, 0, 1)
+    yearStart.setHours(0, 0, 0, 0)
+    const yearEnd = new Date(year, 11, 31, 23, 59, 59, 999)
 
     const heatMap = await Session.aggregate([
-        { $match: { owner: userId, startTime: { $gte: since } } },
-        { $project: { day: { $dateTrunc: { date: "$startTime", unit: "day" } } } },
-        { $group: { _id: "$day", count: { $sum: 1 } } },
-        { $project: { day: "$_id", _id: 0, count: 1 } },
+        { $match: { owner: userId, startTime: { $gte: yearStart, $lte: yearEnd } } },
+        { $project: { day: { $dateTrunc: { date: "$startTime", unit: "day" } }, duration: 1 } },
+        {
+            $group: {
+                _id: "$day",
+                count: { $sum: 1 },
+                totalStudyTime: { $sum: "$duration" },
+            },
+        },
+        { $project: { day: "$_id", _id: 0, count: 1, totalStudyTime: 1 } },
         { $sort: { day: 1 } },
     ])
 

@@ -9,6 +9,7 @@ import authRouter from './routes/auth.route.js'
 import UserRouter from './routes/user.route.js'
 import TodoRouter from './routes/todo.route.js'
 import studySessionRouter from './routes/study-session.route.js'
+import noteRouter from './routes/note.route.js'
 
 const app = express()
 
@@ -50,8 +51,8 @@ app.use(cors({
 }))
 
 // ── Body parsing ──────────────────────────────────────────────────────────────
-app.use(express.json({ limit: '10kb' }))          // cap body size
-app.use(express.urlencoded({ extended: true, limit: '10kb' }))
+app.use(express.json({ limit: '128kb' }))
+app.use(express.urlencoded({ extended: true, limit: '128kb' }))
 app.use(cookieParser())
 app.use(express.static('public'))
 app.set("trust proxy", 1);
@@ -91,6 +92,7 @@ app.use('/api/v1/auth', authRouter)
 app.use('/api/v1/users', UserRouter)
 app.use('/api/v1/todos', TodoRouter)
 app.use('/api/v1/study-session', studySessionRouter)
+app.use('/api/v1/notes', noteRouter)
 
 // ── Global error handler ──────────────────────────────────────────────────────
 // Centralises error responses so no controller needs to handle res.json() on errors

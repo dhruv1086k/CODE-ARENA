@@ -73,6 +73,33 @@ export const startSessionSchema = z.object({
         .nullable(),
 })
 
+// ── Notes Schemas ────────────────────────────────────────────────────────────
+
+const noteTagEnum = z.enum(['DSA', 'Backend', 'Bugs', 'Ideas', 'Interview Prep'])
+
+export const updateWorkspaceNoteSchema = z.object({
+    content: z
+        .string()
+        .max(12000, 'Notes must be at most 12,000 characters')
+        .optional(),
+    title: z
+        .string()
+        .max(120, 'Title must be at most 120 characters')
+        .trim()
+        .optional(),
+    tags: z
+        .array(noteTagEnum)
+        .max(5, 'You can select at most 5 tags')
+        .optional(),
+    isPinned: z.boolean().optional(),
+    sessionTopicTag: z
+        .string()
+        .max(100, 'Session topic must be at most 100 characters')
+        .trim()
+        .nullable()
+        .optional(),
+})
+
 // ── Middleware Factory ───────────────────────────────────────────────────────
 
 /**

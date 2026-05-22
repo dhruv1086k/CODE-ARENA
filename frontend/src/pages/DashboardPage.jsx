@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { apiFetch } from '../api/client';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Navbar } from '../components/Navbar.jsx';
+import { HeatmapTooltip } from '../components/HeatmapTooltip.jsx';
+import { NotesWorkspace } from '../components/NotesWorkspace.jsx';
 
 function StatCard({ icon, label, value, unit, color = 'green' }) {
   const colorMap = {
@@ -27,97 +29,283 @@ function StatCard({ icon, label, value, unit, color = 'green' }) {
   );
 }
 
-function HeatmapGrid({ data }) {
-  if (!data || data.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-20 text-gray-600 text-sm">
-        No activity data yet. Start a session to track your progress!
-      </div>
-    );
-  }
+function formatDur(seconds) {
+  const s = Number(seconds) || 0;
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m`;
+  return `${s}s`;
+}
 
-  const maxCount = Math.max(...data.map((d) => d.count), 1);
-  const getIntensity = (count) => {
-    if (count === 0) return 0;
-    const pct = count / maxCount;
-    if (pct <= 0.25) return 1;
-    if (pct <= 0.5) return 2;
-    if (pct <= 0.75) return 3;
-    return 4;
-  };
+/** Local YYYY-MM-DD (avoids UTC shift from toISOString). */
+function toDateKey(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
 
-  // Build a map of dateString -> count for quick lookup
-  const countMap = {};
-  data.forEach((d) => { countMap[d.day.slice(0, 10)] = d.count; });
+function dayKeyFromApi(day) {
+  if (!day) return '';
+  if (typeof day === 'string') return day.slice(0, 10);
+  return toDateKey(new Date(day));
+}
 
-  // Build full 90-day grid aligned to week boundaries (GitHub style)
+/** Full calendar-year grid (Sun–Sat columns), GitHub-style week alignment. */
+function buildYearHeatmapCalendar(year, activityByDay) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const startDate = new Date(today);
-  startDate.setDate(today.getDate() - 89);
+  const yearStart = new Date(year, 0, 1);
+  const yearEnd = new Date(year, 11, 31);
 
-  // Pad start to the nearest Sunday before startDate
-  const startDay = startDate.getDay();
-  const gridStart = new Date(startDate);
-  gridStart.setDate(startDate.getDate() - startDay);
+  const gridStart = new Date(yearStart);
+  gridStart.setDate(gridStart.getDate() - gridStart.getDay());
 
-  // Build weeks array: each week is 7 days [Sun..Sat]
+  const gridEnd = new Date(yearEnd);
+  gridEnd.setDate(gridEnd.getDate() + (6 - gridEnd.getDay()));
+
   const weeks = [];
   const cursor = new Date(gridStart);
-  while (cursor <= today) {
+
+  while (cursor <= gridEnd) {
     const week = [];
     for (let d = 0; d < 7; d++) {
-      const dateStr = cursor.toISOString().slice(0, 10);
-      const inRange = cursor >= startDate && cursor <= today;
+      const date = new Date(cursor);
+      const dateKey = toDateKey(date);
+      const inYear = date.getFullYear() === year;
+      const isFuture = inYear && date > today;
+      const activity = activityByDay[dateKey];
+
       week.push({
-        dateStr,
-        count: inRange ? (countMap[dateStr] || 0) : null,
-        date: new Date(cursor),
+        dateKey,
+        date,
+        inYear,
+        isFuture,
+        count: inYear && !isFuture ? (activity?.count ?? 0) : 0,
+        totalStudyTime: inYear && !isFuture ? (activity?.totalStudyTime ?? 0) : 0,
       });
       cursor.setDate(cursor.getDate() + 1);
     }
     weeks.push(week);
   }
 
-  // Month labels: mark first week of each new month
   const monthLabels = [];
   weeks.forEach((week, wi) => {
-    const firstVisible = week.find((d) => d.count !== null);
-    if (!firstVisible) return;
-    const m = firstVisible.date.getMonth();
-    const prev = wi > 0 ? weeks[wi - 1].find((d) => d.count !== null) : null;
-    if (!prev || prev.date.getMonth() !== m) {
-      monthLabels.push({ wi, label: firstVisible.date.toLocaleDateString('en-US', { month: 'short' }) });
+    const firstOfMonth = week.find(
+      (cell) => cell.inYear && cell.date.getDate() === 1 && cell.date.getFullYear() === year,
+    );
+    if (firstOfMonth) {
+      monthLabels.push({
+        wi,
+        label: firstOfMonth.date.toLocaleDateString('en-US', { month: 'short' }),
+      });
     }
   });
 
+  return { weeks, monthLabels };
+}
+
+function getIntensityLevel(count, maxCount) {
+  if (count === 0) return 0;
+  const pct = count / maxCount;
+  if (pct <= 0.25) return 1;
+  if (pct <= 0.5) return 2;
+  if (pct <= 0.75) return 3;
+  return 4;
+}
+
+const HEATMAP_DESKTOP_MQ = '(min-width: 1024px)';
+const HEATMAP_TABLET_MQ = '(min-width: 640px)';
+const HEATMAP_MOBILE_SM = { mode: 'scroll', cell: 10, gap: 2, dayCol: 24, labelPx: 8, monthRow: 14 };
+const HEATMAP_MOBILE_MD = { mode: 'scroll', cell: 11, gap: 3, dayCol: 26, labelPx: 9, monthRow: 16 };
+
+function getScrollHeatmapLayout() {
+  return window.matchMedia(HEATMAP_TABLET_MQ).matches ? HEATMAP_MOBILE_MD : HEATMAP_MOBILE_SM;
+}
+
+/** Fit ~53 week columns inside the card on desktop; fixed size + scroll on smaller screens. */
+function useHeatmapLayout(weekCount) {
+  const containerRef = useRef(null);
+  const [layout, setLayout] = useState(HEATMAP_MOBILE_MD);
+
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el || weekCount < 1) return;
+
+    const compute = () => {
+      const desktop = window.matchMedia(HEATMAP_DESKTOP_MQ).matches;
+      if (!desktop) {
+        setLayout(getScrollHeatmapLayout());
+        return;
+      }
+
+      const dayCol = 26;
+      const usable = Math.max(0, el.clientWidth - dayCol - 2);
+      const W = weekCount;
+      let gap = 3;
+      let cell = Math.floor((usable - (W - 1) * gap) / W);
+      gap = Math.max(2, Math.min(4, Math.round(cell * 0.22)));
+      cell = Math.floor((usable - (W - 1) * gap) / W);
+      cell = Math.max(7, Math.min(14, cell));
+
+      setLayout({
+        mode: 'fit',
+        cell,
+        gap,
+        dayCol,
+        labelPx: cell >= 11 ? 9 : 8,
+        monthRow: 16,
+      });
+    };
+
+    compute();
+    const ro = new ResizeObserver(compute);
+    ro.observe(el);
+    const mqDesktop = window.matchMedia(HEATMAP_DESKTOP_MQ);
+    const mqTablet = window.matchMedia(HEATMAP_TABLET_MQ);
+    mqDesktop.addEventListener('change', compute);
+    mqTablet.addEventListener('change', compute);
+    return () => {
+      ro.disconnect();
+      mqDesktop.removeEventListener('change', compute);
+      mqTablet.removeEventListener('change', compute);
+    };
+  }, [weekCount]);
+
+  const gridWidth = weekCount > 0
+    ? weekCount * layout.cell + (weekCount - 1) * layout.gap
+    : 0;
+
+  return { containerRef, layout, gridWidth };
+}
+
+function HeatmapGrid({ data, year = new Date().getFullYear() }) {
+  const activityByDay = useMemo(() => {
+    const map = {};
+    (data || []).forEach((entry) => {
+      const key = dayKeyFromApi(entry.day);
+      if (!key) return;
+      map[key] = {
+        count: Number(entry.count) || 0,
+        totalStudyTime: Number(entry.totalStudyTime) || 0,
+      };
+    });
+    return map;
+  }, [data]);
+
+  const { weeks, monthLabels } = useMemo(
+    () => buildYearHeatmapCalendar(year, activityByDay),
+    [year, activityByDay],
+  );
+
+  const maxCount = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const counts = Object.entries(activityByDay)
+      .filter(([key]) => {
+        const d = new Date(`${key}T12:00:00`);
+        return d.getFullYear() === year && d <= today;
+      })
+      .map(([, v]) => v.count);
+    return Math.max(...counts, 1);
+  }, [activityByDay, year]);
+
+  const yearSessionTotal = useMemo(
+    () => Object.values(activityByDay).reduce((s, d) => s + d.count, 0),
+    [activityByDay],
+  );
+
+  const { containerRef, layout, gridWidth } = useHeatmapLayout(weeks.length);
+  const isFit = layout.mode === 'fit';
+  const [hoveredCell, setHoveredCell] = useState(null);
+
   const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const cellRadius = Math.max(2, Math.round(layout.cell * 0.22));
+  const cellStyle = {
+    width: layout.cell,
+    height: layout.cell,
+    borderRadius: cellRadius,
+    flexShrink: 0,
+  };
+  const rowStyle = { gap: layout.gap };
+  const hoverFx = layout.cell >= 10
+    ? 'hover:scale-125'
+    : 'hover:ring-1 hover:ring-white/25';
+
+  const cellClassName = (cell) => {
+    if (!cell.inYear) return 'opacity-0 pointer-events-none';
+    if (cell.isFuture) return 'heat-future';
+    return `heat-${getIntensityLevel(cell.count, maxCount)} transition-all duration-150 ${hoverFx} cursor-default`;
+  };
+
+  const gridMinHeight = layout.monthRow + layout.cell * 7 + layout.gap * 6;
 
   return (
-    <div className="overflow-x-auto pb-2 select-none">
-      <div className="flex gap-1 min-w-max">
-        {/* Day-of-week labels column */}
-        <div className="flex flex-col gap-[3px] mr-1 pt-5">
+    <div className="w-full min-w-0">
+      <p className="text-[10px] text-gray-600 mb-2 lg:hidden">
+        Swipe horizontally to view the full year
+      </p>
+      <div
+        ref={containerRef}
+        className="w-full min-w-0 pb-2 select-none overflow-x-auto overflow-y-visible lg:overflow-hidden -mx-1 px-1"
+        style={{ minHeight: gridMinHeight }}
+      >
+        <div
+          className={`flex w-max min-w-full ${isFit ? 'lg:w-full lg:justify-center' : ''}`}
+          style={isFit ? undefined : { paddingRight: 4 }}
+        >
+        <div
+          className="flex flex-col flex-shrink-0"
+          style={{
+            width: layout.dayCol,
+            marginRight: 4,
+            paddingTop: layout.monthRow,
+            gap: layout.gap,
+          }}
+        >
           {DAY_LABELS.map((d, i) => (
-            <div key={d} className="h-3.5 flex items-center">
+            <div
+              key={d}
+              className="flex items-center flex-shrink-0"
+              style={{ height: layout.cell }}
+            >
               {[1, 3, 5].includes(i)
-                ? <span className="text-[9px] text-gray-600 w-6 leading-none">{d}</span>
-                : <span className="w-6" />}
+                ? (
+                  <span
+                    className="text-gray-600 leading-none"
+                    style={{ fontSize: layout.labelPx, width: layout.dayCol }}
+                  >
+                    {d}
+                  </span>
+                )
+                : <span style={{ width: layout.dayCol }} />}
             </div>
           ))}
         </div>
 
-        {/* Week columns */}
-        <div className="flex flex-col">
-          {/* Month label row */}
-          <div className="flex mb-1 h-4 relative">
+        <div
+          className="flex flex-col flex-shrink-0"
+          style={isFit ? { width: gridWidth, maxWidth: '100%' } : undefined}
+        >
+          <div
+            className="flex relative mb-1 flex-shrink-0"
+            style={{ ...rowStyle, height: layout.monthRow }}
+          >
             {weeks.map((_, wi) => {
               const ml = monthLabels.find((m) => m.wi === wi);
               return (
-                <div key={wi} className="w-3.5 mr-[3px] relative">
+                <div
+                  key={wi}
+                  className="relative flex-shrink-0"
+                  style={{ width: layout.cell }}
+                >
                   {ml && (
-                    <span className="absolute left-0 text-[9px] text-gray-500 whitespace-nowrap leading-none">
+                    <span
+                      className="absolute left-0 text-gray-500 whitespace-nowrap leading-none"
+                      style={{ fontSize: layout.labelPx }}
+                    >
                       {ml.label}
                     </span>
                   )}
@@ -126,46 +314,54 @@ function HeatmapGrid({ data }) {
             })}
           </div>
 
-          {/* Cell grid */}
-          <div className="flex gap-[3px] overflow-visible">
+          <div className="flex overflow-visible" style={rowStyle}>
             {weeks.map((week, wi) => (
-              <div key={wi} className="flex flex-col gap-[3px] overflow-visible">
-                {week.map((cell, di) => (
-                  <div key={di} className="relative group/cell">
+              <div key={wi} className="flex flex-col overflow-visible flex-shrink-0" style={rowStyle}>
+                {week.map((cell) => (
+                  <div
+                    key={cell.dateKey}
+                    className="relative flex-shrink-0"
+                    onMouseEnter={cell.inYear ? (e) => setHoveredCell({ cell, el: e.currentTarget }) : undefined}
+                    onMouseLeave={cell.inYear ? () => setHoveredCell(null) : undefined}
+                    onFocus={cell.inYear ? (e) => setHoveredCell({ cell, el: e.currentTarget }) : undefined}
+                    onBlur={cell.inYear ? () => setHoveredCell(null) : undefined}
+                  >
                     <div
-                      className={`w-3.5 h-3.5 rounded-[3px] transition-all duration-150 group-hover/cell:scale-125 ${cell.count === null
-                        ? 'opacity-0 pointer-events-none'
-                        : `heat-${getIntensity(cell.count)} cursor-default`
-                        }`}
+                      className={cellClassName(cell)}
+                      style={cellStyle}
+                      tabIndex={cell.inYear ? 0 : undefined}
+                      aria-label={
+                        cell.inYear
+                          ? `${cell.date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}, ${cell.count} sessions`
+                          : undefined
+                      }
                     />
-                    {cell.count !== null && (
-                      <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 z-50 hidden group-hover/cell:block pointer-events-none">
-                        <div className="w-2 h-2 bg-[#1f2937] border-l border-t border-[#374151] rotate-45 absolute left-1/2 -translate-x-1/2 -top-1" />
-                        <div className="bg-[#1f2937] border border-[#374151] text-xs text-white rounded-lg px-2.5 py-1.5 whitespace-nowrap shadow-xl">
-                          <span className="font-medium">
-                            {cell.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                          </span>
-                          <span className="text-gray-400 ml-1">
-                            â€” {cell.count} session{cell.count !== 1 ? 's' : ''}
-                          </span>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
             ))}
           </div>
         </div>
+        </div>
       </div>
 
-      {/* Legend */}
-      <div className="flex items-center gap-1.5 mt-3">
-        <span className="text-[11px] text-gray-600">Less</span>
-        {[0, 1, 2, 3, 4].map((i) => (
-          <div key={i} className={`w-3 h-3 rounded-[2px] heat-${i}`} />
-        ))}
-        <span className="text-[11px] text-gray-600">More</span>
+      <HeatmapTooltip
+        anchorEl={hoveredCell?.el}
+        cell={hoveredCell?.cell}
+        formatDur={formatDur}
+      />
+
+      <div className="flex flex-wrap items-center justify-between gap-2 mt-3">
+        <p className="text-[11px] text-gray-600">
+          {yearSessionTotal} session{yearSessionTotal !== 1 ? 's' : ''} in {year}
+        </p>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] text-gray-600">Less</span>
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div key={i} className={`w-3 h-3 rounded-[2px] heat-${i}`} />
+          ))}
+          <span className="text-[11px] text-gray-600">More</span>
+        </div>
       </div>
     </div>
   );
@@ -192,121 +388,7 @@ const SLICE_COLORS = [
   '#3b82f6', '#ec4899', '#ef4444', '#14b8a6',
 ];
 
-function formatDur(seconds) {
-  const s = Number(seconds) || 0;
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  if (h > 0) return `${h}h ${m}m`;
-  if (m > 0) return `${m}m`;
-  return `${s}s`;
-}
-// -- Weekly Bar Chart Panel --------------------------------------------------
-function WeeklyBarPanel({ refreshKey }) {
-  const navigate = useNavigate();
-  const [bars, setBars] = useState([]);
-  const [maxHours, setMaxHours] = useState(1);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      setLoading(true);
-      try {
-        const days = [];
-        for (let i = 6; i >= 0; i--) {
-          const d = new Date();
-          d.setDate(d.getDate() - i);
-          const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-          days.push({ iso, label: d.toLocaleDateString('en-US', { weekday: 'short' }), isToday: i === 0 });
-        }
-        const results = await Promise.all(
-          days.map((d) =>
-            apiFetch(`/api/v1/study-session/stats?date=${d.iso}`, { auth: true }).catch(() => ({ totalStudyTime: 0 }))
-          )
-        );
-        if (cancelled) return;
-        const barsData = days.map((d, i) => {
-          const sd = results[i]?.data ?? results[i];
-          return { ...d, hours: Number(sd?.totalStudyTime ?? 0) / 3600 };
-        });
-        setBars(barsData);
-        setMaxHours(Math.max(...barsData.map((b) => b.hours), 0.5));
-      } catch { /* silent */ } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    load();
-    return () => { cancelled = true; };
-  }, [refreshKey]);
-
-  const weekTotal = bars.reduce((s, b) => s + b.hours * 3600, 0);
-
-  return (
-    <section className="bg-[#111827] border border-[#1f2937] rounded-2xl p-4 flex flex-col h-full overflow-hidden">
-      <div className="flex items-center justify-between mb-2.5 flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <span className="material-symbols-rounded text-[20px] text-[#22c55e]">bar_chart</span>
-          <h2 className="text-sm font-semibold text-white">This Week</h2>
-        </div>
-        <button onClick={() => navigate('/history')} className="flex items-center gap-1 text-[11px] text-gray-500 hover:text-[#22c55e] transition-colors">
-          Full history <span className="material-symbols-rounded text-[14px]">arrow_forward</span>
-        </button>
-      </div>
-      {loading ? (
-        <div className="flex-1 flex items-center justify-center">
-          <svg className="animate-spin h-5 w-5 text-[#22c55e]" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-        </div>
-      ) : (
-        <div className="flex-1 min-h-0 flex flex-col">
-          <div className="flex-1 min-h-0 flex items-end gap-1.5 px-1">
-            {bars.map((bar) => {
-              const heightPct = bar.hours > 0 ? Math.max((bar.hours / maxHours) * 100, 6) : 2;
-              return (
-                <div key={bar.iso} className="flex-1 flex flex-col items-center justify-end h-full relative group">
-                  {bar.hours > 0 && (
-                    <div className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 hidden group-hover:block z-20 pointer-events-none">
-                      <div className="bg-[#1f2937] border border-[#374151] text-[11px] text-white rounded-lg px-2 py-1 whitespace-nowrap shadow-xl">
-                        {bar.hours.toFixed(1)}h
-                      </div>
-                    </div>
-                  )}
-                  <div
-                    className="w-full rounded-t-md transition-all duration-700 ease-out"
-                    style={{
-                      height: `${heightPct}%`,
-                      background: bar.hours === 0
-                        ? '#1f2937'
-                        : bar.isToday
-                          ? 'linear-gradient(to top, #16a34a, #22c55e)'
-                          : 'linear-gradient(to top, #14532d, #22c55e80)',
-                      boxShadow: bar.isToday && bar.hours > 0 ? '0 0 10px #22c55e50' : undefined,
-                    }}
-                  />
-                </div>
-              );
-            })}
-          </div>
-          <div className="flex gap-1.5 px-1 mt-1.5 flex-shrink-0">
-            {bars.map((bar) => (
-              <div key={bar.iso} className={`flex-1 text-center text-[10px] font-semibold ${bar.isToday ? 'text-[#22c55e]' : 'text-gray-600'}`}>
-                {bar.label}
-              </div>
-            ))}
-          </div>
-          <div className="mt-2 pt-2 border-t border-[#1f2937] flex items-center justify-between flex-shrink-0">
-            <span className="text-[11px] text-gray-500">Week total</span>
-            <span className="text-sm font-bold text-[#22c55e]">{formatDur(weekTotal)}</span>
-          </div>
-        </div>
-      )}
-    </section>
-  );
-}
-
-// â”€â”€ Task Preview Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Task Preview Panel ───────────────────────────────────────────────────────
 function TaskPreviewPanel({ refreshKey }) {
   const navigate = useNavigate();
   const [todos, setTodos] = useState([]);
@@ -332,7 +414,7 @@ function TaskPreviewPanel({ refreshKey }) {
   };
 
   return (
-    <section className="bg-[#111827] border border-[#1f2937] rounded-2xl p-4 flex flex-col h-full overflow-hidden">
+    <section className="bg-[#111827] border border-[#1f2937] rounded-2xl p-4 flex flex-col w-full min-h-[220px] lg:h-full lg:min-h-0 lg:overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between mb-2.5 flex-shrink-0">
         <div className="flex items-center gap-2">
@@ -354,14 +436,14 @@ function TaskPreviewPanel({ refreshKey }) {
       </div>
 
       {loading ? (
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex flex-1 items-center justify-center py-10 lg:py-0 min-h-[140px]">
           <svg className="animate-spin h-5 w-5 text-[#22c55e]" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
           </svg>
         </div>
       ) : todos.length === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center gap-2">
+        <div className="flex flex-col items-center justify-center gap-2 py-10 lg:flex-1 lg:py-0 min-h-[140px]">
           <div className="w-10 h-10 rounded-xl bg-[#0a0d14] border border-[#1f2937] flex items-center justify-center">
             <span className="material-symbols-rounded text-[22px] text-gray-600">task_alt</span>
           </div>
@@ -375,7 +457,7 @@ function TaskPreviewPanel({ refreshKey }) {
         </div>
       ) : (
         <>
-          <div className="space-y-1.5 flex-1 min-h-0 overflow-y-auto">
+          <div className="space-y-1.5 lg:flex-1 lg:min-h-0 lg:overflow-y-auto">
             {todos.map((todo, i) => (
               <div
                 key={todo._id}
@@ -393,7 +475,7 @@ function TaskPreviewPanel({ refreshKey }) {
                   <span className="material-symbols-rounded text-[12px] text-transparent group-hover:text-[#22c55e]/40 transition-colors">check</span>
                 </button>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-200 font-medium leading-snug truncate">{todo.topicTag}</p>
+                  <p className="text-sm text-gray-200 font-medium leading-snug line-clamp-2 sm:truncate">{todo.topicTag}</p>
                   {todo.description && (
                     <p className="text-[11px] text-gray-600 mt-0.5 line-clamp-1">{todo.description}</p>
                   )}
@@ -548,9 +630,9 @@ function DashboardPage() {
   };
 
   return (
-    <div className="h-screen overflow-hidden bg-[#0a0d14] flex flex-col">
+    <div className="min-h-dvh flex flex-col bg-[#0a0d14] lg:h-screen lg:overflow-hidden">
       <Navbar />
-      <main className="flex-1 min-h-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4 pb-4 flex flex-col gap-3 animate-[fadeIn_0.3s_ease-out]">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-6 flex flex-col gap-3 animate-[fadeIn_0.3s_ease-out] overflow-y-auto lg:min-h-0 lg:overflow-hidden">
 
         {/* â”€â”€ Greeting â”€â”€ */}
         <div className="flex-shrink-0">
@@ -569,44 +651,44 @@ function DashboardPage() {
         {/* â”€â”€ Main grid: unified 3-column layout â”€â”€
               LEFT  (col-span-2): Heatmap stacked above Donut chart
               RIGHT (col-span-1): Session panel stacked above Task list          â”€â”€ */}
-        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 lg:flex-1 lg:min-h-0 auto-rows-auto">
 
           {/* LEFT COLUMN */}
-          <div className="lg:col-span-2 flex flex-col gap-3 min-h-0">
+          <div className="lg:col-span-2 flex flex-col gap-3 lg:min-h-0">
 
-            {/* Heatmap â€” grows to fill top of left column */}
-            <section className="flex-1 min-h-0 bg-[#111827] border border-[#1f2937] rounded-2xl p-4 flex flex-col">
+            {/* Activity heatmap */}
+            <section className="bg-[#111827] border border-[#1f2937] rounded-2xl p-4 flex flex-col flex-none lg:flex-1 lg:min-h-0">
               <div className="flex items-center justify-between mb-3 flex-shrink-0">
                 <div>
                   <h2 className="text-sm font-semibold text-white">Activity</h2>
                   <p className="text-[11px] text-gray-500 mt-0.5">
-                    {heatmap.reduce((s, d) => s + d.count, 0)} sessions in the last 90 days
+                    {new Date().getFullYear()} contribution calendar
                   </p>
                 </div>
                 <div className="flex items-center gap-1.5 text-[11px] text-gray-600">
                   <span className="material-symbols-rounded text-[15px]">calendar_today</span>
-                  Last 90 days
+                  {new Date().getFullYear()}
                 </div>
               </div>
-              <div className="flex-1 min-h-0 overflow-hidden">
+              <div className="w-full min-w-0 flex-none lg:flex-1 lg:min-h-0 lg:overflow-hidden">
                 <HeatmapGrid data={heatmap} />
               </div>
             </section>
 
-            {/* Donut Chart â€” fixed at bottom of left column */}
-            <div className="flex-shrink-0" style={{ height: '200px' }}>
-              <WeeklyBarPanel refreshKey={refreshKey} />
+            {/* Notes workspace */}
+            <div className="flex-shrink-0 min-h-[300px] lg:flex-1 lg:min-h-[280px] flex flex-col">
+              <NotesWorkspace
+                sessionActive={sessionActive}
+                sessionTopicTag={sessionData?.topicTag || topicTag}
+              />
             </div>
           </div>
 
           {/* RIGHT COLUMN */}
-          <div className="flex flex-col gap-3 min-h-0">
+          <div className="flex flex-col gap-3 lg:min-h-0">
 
-            {/* Session Panel â€” fixed height */}
-            <aside
-              className="flex-shrink-0 bg-[#111827] border border-[#1f2937] rounded-2xl p-4 flex flex-col"
-              style={{ minHeight: '230px' }}
-            >
+            {/* Session panel */}
+            <aside className="flex-shrink-0 bg-[#111827] border border-[#1f2937] rounded-2xl p-4 flex flex-col min-h-0 lg:min-h-[230px]">
               <div className="flex items-center gap-2 mb-3 flex-shrink-0">
                 <div className={`w-2 h-2 rounded-full ${sessionActive ? 'bg-[#22c55e] animate-pulse' : 'bg-gray-600'}`} />
                 <h2 className="text-sm font-semibold text-white">
@@ -673,8 +755,8 @@ function DashboardPage() {
               </button>
             </aside>
 
-            {/* Task List â€” fills the rest of the right column */}
-            <div className="flex-1 min-h-0">
+            {/* Active tasks */}
+            <div className="flex-none lg:flex-1 lg:min-h-0">
               <TaskPreviewPanel refreshKey={refreshKey} />
             </div>
           </div>
