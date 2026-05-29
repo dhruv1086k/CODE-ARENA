@@ -1,42 +1,76 @@
-// In development: VITE_API_BASE_URL is not set → uses '' → Vite proxy forwards /api/* to localhost:5000 → zero CORS issues
-// In production:  set VITE_API_BASE_URL=https://your-backend.com in your Vercel / hosting env vars
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
+
+const AUTH_CHANNEL = 'codearena-auth'
+const authChannel = typeof BroadcastChannel !== 'undefined'
+  ? new BroadcastChannel(AUTH_CHANNEL)
+  : null
 
 const getAccessToken = () => localStorage.getItem('accessToken') || ''
 const setAccessToken = (token) => localStorage.setItem('accessToken', token)
 const clearAccessToken = () => localStorage.removeItem('accessToken')
 
-// Track if a token refresh is already in-flight to avoid duplicate refresh calls
+export function isAccessTokenExpired(token, bufferSec = 90) {
+  if (!token) return true
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    return payload.exp * 1000 <= Date.now() + bufferSec * 1000
+  } catch {
+    return true
+  }
+}
+
 let refreshPromise = null
 
-async function doRefresh() {
+function broadcastToken(accessToken) {
+  authChannel?.postMessage({ type: 'token', accessToken })
+  window.dispatchEvent(new CustomEvent('auth:tokenRefreshed', { detail: { accessToken } }))
+}
+
+authChannel?.addEventListener('message', (event) => {
+  const token = event.data?.accessToken
+  if (event.data?.type === 'token' && token) {
+    setAccessToken(token)
+    window.dispatchEvent(new CustomEvent('auth:tokenRefreshed', { detail: { accessToken: token } }))
+  }
+})
+
+async function doRefresh(retry = false) {
   const response = await fetch(`${API_BASE}/api/v1/auth/refresh`, {
     method: 'GET',
-    credentials: 'include', // send the refreshToken HttpOnly cookie
+    credentials: 'include',
   })
+
+  if (response.status === 401 && !retry) {
+    await new Promise((r) => setTimeout(r, 200))
+    return doRefresh(true)
+  }
+
   if (!response.ok) {
-    // Refresh token is also expired or revoked — force logout
     clearAccessToken()
-    // Dispatch a custom event so AuthContext can react and clear user state
     window.dispatchEvent(new CustomEvent('auth:logout'))
     throw new Error('Session expired. Please log in again.')
   }
+
   const data = await response.json()
   const newToken = data?.data?.accessToken
   if (newToken) {
     setAccessToken(newToken)
-    // Notify AuthContext so it can sync its React state (keeps isAuthenticated = true)
-    window.dispatchEvent(new CustomEvent('auth:tokenRefreshed', { detail: { accessToken: newToken } }))
+    broadcastToken(newToken)
   }
   return newToken
 }
 
 export async function refreshAccessToken() {
-  // If a refresh is already in-flight, wait for it instead of firing another request
   if (!refreshPromise) {
     refreshPromise = doRefresh().finally(() => { refreshPromise = null })
   }
   return refreshPromise
+}
+
+export async function ensureValidAccessToken() {
+  const token = getAccessToken()
+  if (token && !isAccessTokenExpired(token)) return token
+  return refreshAccessToken()
 }
 
 export async function apiFetch(path, { method = 'GET', body, auth = false, headers = {}, _retry = false } = {}) {
@@ -57,15 +91,11 @@ export async function apiFetch(path, { method = 'GET', body, auth = false, heade
     body: body ? JSON.stringify(body) : undefined,
   })
 
-  // ── Silent token refresh on 401 ──────────────────────────────────────────
-  // Only attempt once (_retry flag) and only for authenticated requests
   if (response.status === 401 && auth && !_retry) {
     try {
       await refreshAccessToken()
-      // Retry the original request with the new access token
       return apiFetch(path, { method, body, auth, headers, _retry: true })
     } catch {
-      // Refresh also failed — the auth:logout event was already dispatched
       throw new Error('Session expired. Please log in again.')
     }
   }

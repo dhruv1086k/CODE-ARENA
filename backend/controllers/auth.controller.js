@@ -6,11 +6,10 @@ import { asyncHandlerWrapper } from "../utils/Async-handler.js";
 import { sendOtpEmail } from "../utils/email.js";
 import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
+import { parseExpiryToMs } from '../utils/tokenExpiry.js'
 
-// ── Helper: generate a cryptographically random 6-digit OTP ──────────────────
 const generateOtp = () => String(Math.floor(100000 + crypto.randomInt(900000)))
 
-// ── Helper: generate token pair ──────────────────────────────────────────────
 const generateAccessAndRefreshToken = async (userId) => {
     const user = await User.findById(userId)
     if (!user) throw new ApiError(500, "User not found during token generation")
@@ -24,11 +23,14 @@ const generateAccessAndRefreshToken = async (userId) => {
     return { accessToken, refreshToken }
 }
 
+const refreshCookieMaxAge = parseExpiryToMs(process.env.REFRESH_TOKEN_EXPIRY)
+
 const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     path: '/',
+    maxAge: refreshCookieMaxAge,
 }
 
 // ── Register ──────────────────────────────────────────────────────────────────
@@ -102,11 +104,10 @@ export const refreshAccessToken = asyncHandlerWrapper(async (req, res) => {
     if (!user) throw new ApiError(401, "User not found")
     if (token !== user.refreshToken) throw new ApiError(401, "Refresh token has already been used or revoked")
 
-    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id)
+    const accessToken = user.generateAccessToken()
 
     return res
         .status(200)
-        .cookie("refreshToken", refreshToken, cookieOptions)
         .json(new ApiResponse(200, { accessToken }, "Access token refreshed successfully"))
 })
 

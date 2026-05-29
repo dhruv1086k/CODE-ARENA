@@ -5,7 +5,6 @@ import { asyncHandlerWrapper } from '../utils/Async-handler.js';
 
 const workspaceFilter = (userId) => ({ owner: userId, kind: 'workspace' });
 
-/** GET — fetch (or create) the user's dashboard workspace note */
 export const getWorkspaceNote = asyncHandlerWrapper(async (req, res) => {
   const userId = req.user._id;
 
@@ -26,7 +25,6 @@ export const getWorkspaceNote = asyncHandlerWrapper(async (req, res) => {
   );
 });
 
-/** PUT — upsert workspace note (autosave) */
 export const upsertWorkspaceNote = asyncHandlerWrapper(async (req, res) => {
   const userId = req.user._id;
   const { content, title, tags, isPinned, sessionTopicTag } = req.body;
@@ -44,7 +42,6 @@ export const upsertWorkspaceNote = asyncHandlerWrapper(async (req, res) => {
       : { topicTag: null, capturedAt: null };
   }
 
-  // Only owner/kind in $setOnInsert — never duplicate paths already in $set (MongoDB conflict)
   const note = await Note.findOneAndUpdate(
     workspaceFilter(userId),
     {

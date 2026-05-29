@@ -20,7 +20,6 @@ export const verifyJWT = asyncHandlerWrapper(async (req, res, next) => {
         throw new ApiError(401, "Token not found")
     }
 
-    // check to send 401 if token is expired or invalid otherwise decode the token 
     let decodeToken;
     try {
         decodeToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET_KEY)

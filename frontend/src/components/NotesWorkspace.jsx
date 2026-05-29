@@ -61,8 +61,10 @@ export function NotesWorkspace({ sessionActive = false, sessionTopicTag = '' }) 
   const [loadError, setLoadError] = useState('');
 
   const savedSnapshot = useRef({ content: '', tags: [], isPinned: false });
+  const [savedRevision, setSavedRevision] = useState(0);
   const saveTimer = useRef(null);
   const saveSeq = useRef(0);
+  const savingRef = useRef(false);
   const textareaRef = useRef(null);
 
   const isDirty = useMemo(() => {
@@ -72,7 +74,7 @@ export function NotesWorkspace({ sessionActive = false, sessionTopicTag = '' }) 
       || JSON.stringify(tags) !== JSON.stringify(snap.tags)
       || isPinned !== snap.isPinned
     );
-  }, [content, tags, isPinned]);
+  }, [content, tags, isPinned, savedRevision]);
 
   const wordCount = useMemo(() => countWords(content), [content]);
   const charCount = content.length;
@@ -117,6 +119,7 @@ export function NotesWorkspace({ sessionActive = false, sessionTopicTag = '' }) 
 
   const persistNote = useCallback(async (payload) => {
     const seq = ++saveSeq.current;
+    savingRef.current = true;
     setStatus('saving');
     try {
       const res = await apiFetch('/api/v1/notes/workspace', {
@@ -126,22 +129,29 @@ export function NotesWorkspace({ sessionActive = false, sessionTopicTag = '' }) 
       });
       if (seq !== saveSeq.current) return;
       const data = res?.data ?? res;
-      setNoteId(data?._id ?? noteId);
+      setNoteId(data?._id ?? null);
       setLastEditedAt(data?.lastEditedAt || data?.updatedAt || new Date().toISOString());
       savedSnapshot.current = {
-        content: payload.content ?? savedSnapshot.current.content,
-        tags: payload.tags ?? savedSnapshot.current.tags,
-        isPinned: payload.isPinned ?? savedSnapshot.current.isPinned,
+        content: payload.content ?? '',
+        tags: payload.tags ?? [],
+        isPinned: payload.isPinned ?? false,
       };
+      setSavedRevision((n) => n + 1);
       setStatus('saved');
     } catch {
       if (seq === saveSeq.current) setStatus('error');
+    } finally {
+      savingRef.current = false;
     }
-  }, [noteId]);
+  }, []);
 
-  const scheduleSave = useCallback(() => {
+  useEffect(() => {
+    if (status === 'loading' || loadError || savingRef.current) return;
+    if (!isDirty) return;
+
+    setStatus((s) => (s === 'saved' || s === 'unsaved' || s === 'error' ? 'unsaved' : s));
+
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    setStatus((s) => (s === 'loading' ? s : 'unsaved'));
     saveTimer.current = setTimeout(() => {
       persistNote({
         content,
@@ -152,16 +162,11 @@ export function NotesWorkspace({ sessionActive = false, sessionTopicTag = '' }) 
           : null,
       });
     }, AUTOSAVE_MS);
-  }, [content, tags, isPinned, sessionActive, sessionTopicTag, persistNote]);
 
-  useEffect(() => {
-    if (status === 'loading' || status === 'error' || loadError) return;
-    if (!isDirty) return;
-    scheduleSave();
     return () => {
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };
-  }, [content, tags, isPinned, isDirty, status, loadError, scheduleSave]);
+  }, [content, tags, isPinned, isDirty, loadError, sessionActive, sessionTopicTag, persistNote]);
 
   const handleContentChange = (e) => {
     setContent(e.target.value);

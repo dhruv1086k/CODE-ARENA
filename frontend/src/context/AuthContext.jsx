@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { apiFetch, refreshAccessToken } from "../api/client";
+import { apiFetch, ensureValidAccessToken, isAccessTokenExpired } from "../api/client";
 
 const AuthContext = createContext(null);
 
@@ -9,24 +9,24 @@ export function AuthProvider({ children }) {
     localStorage.getItem("accessToken") || "",
   );
   const [loading, setLoading] = useState(false);
-  const [initializing, setInitializing] = useState(
-    () => !!localStorage.getItem("accessToken"),
-  );
+  const [initializing, setInitializing] = useState(true);
 
-  // Restore session on mount: validate the HttpOnly refresh cookie first so we
-  // don't hit /me with a stale access token (which caused a noisy refresh 401).
   useEffect(() => {
-    const stored = localStorage.getItem("accessToken");
-    if (!stored) {
-      setInitializing(false);
-      return;
-    }
-
     let cancelled = false;
 
     (async () => {
+      const stored = localStorage.getItem("accessToken");
+
       try {
-        const token = await refreshAccessToken();
+        if (stored && !isAccessTokenExpired(stored)) {
+          const res = await apiFetch("/api/v1/users/me", { auth: true });
+          if (cancelled) return;
+          setUser(res?.data || res?.user || res);
+          setAccessToken(stored);
+          return;
+        }
+
+        const token = await ensureValidAccessToken();
         const res = await apiFetch("/api/v1/users/me", { auth: true });
         if (cancelled) return;
         if (token) setAccessToken(token);
@@ -41,13 +41,9 @@ export function AuthProvider({ children }) {
       }
     })();
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
-  // Listen for forced logout events dispatched by the API client when
-  // the refresh token has also expired (true session end)
   useEffect(() => {
     const handleForceLogout = () => {
       setUser(null);
@@ -59,20 +55,14 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener("auth:logout", handleForceLogout);
   }, []);
 
-  // Listen for silent token refresh events dispatched by the API client.
-  // Without this, the React accessToken state stays stale after refresh,
-  // causing isAuthenticated → false and wrongly redirecting the user to /login.
   useEffect(() => {
     const handleTokenRefreshed = (e) => {
       const newToken = e.detail?.accessToken;
-      if (newToken) {
-        setAccessToken(newToken);
-      }
+      if (newToken) setAccessToken(newToken);
     };
 
     window.addEventListener("auth:tokenRefreshed", handleTokenRefreshed);
-    return () =>
-      window.removeEventListener("auth:tokenRefreshed", handleTokenRefreshed);
+    return () => window.removeEventListener("auth:tokenRefreshed", handleTokenRefreshed);
   }, []);
 
   const login = async (email, password) => {
@@ -119,7 +109,7 @@ export function AuthProvider({ children }) {
     try {
       await apiFetch("/api/v1/auth/logout", { method: "GET", auth: true });
     } catch {
-      // ignore errors on logout
+      /* best effort */
     }
     localStorage.removeItem("accessToken");
     setAccessToken("");
