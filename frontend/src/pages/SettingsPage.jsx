@@ -505,7 +505,7 @@ function SettingsPage() {
           </SettingsSection>
 
           {/* Appearance */}
-          <SettingsSection title="Appearance" icon="palette">
+          {/* <SettingsSection title="Appearance" icon="palette">
             <div className="flex items-center justify-between py-1">
               <div className="flex items-center gap-3">
                 <span className="material-symbols-rounded text-[20px] text-gray-400">
@@ -543,7 +543,7 @@ function SettingsPage() {
                 </span>
               </button>
             </div>
-          </SettingsSection>
+          </SettingsSection> */}
 
           {/* Security */}
           <SettingsSection title="Security" icon="security">
@@ -563,7 +563,7 @@ function SettingsPage() {
                   Change
                 </button>
               </div>
-              <div className="flex items-center justify-between py-1 border-t border-[#1a2235]">
+              {/* <div className="flex items-center justify-between py-1 border-t border-[#1a2235]">
                 <div>
                   <p className="text-sm font-medium text-white">
                     Active Sessions
@@ -576,7 +576,7 @@ function SettingsPage() {
                   <div className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse" />
                   <span className="text-xs text-gray-400">Active</span>
                 </div>
-              </div>
+              </div> */}
             </div>
           </SettingsSection>
 
