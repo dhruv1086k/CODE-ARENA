@@ -110,7 +110,7 @@ export function validate(schema) {
     return (req, res, next) => {
         const result = schema.safeParse(req.body)
         if (!result.success) {
-            const message = result.error.errors[0]?.message || 'Validation failed'
+            const message = result.error.issues[0].message || 'Validation failed'
             return next(new ApiError(400, message, result.error.errors))
         }
         // Replace req.body with the sanitized + coerced data
